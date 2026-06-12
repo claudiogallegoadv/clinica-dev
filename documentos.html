@@ -1,0 +1,3081 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <script src="config.js"></script>
+  <script>if(typeof authCheck==="function") authCheck();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentos — Clínica Dra. Anna Carolina Dias</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --verde:#1D9E75;--verde-e:#0F6E56;--verde-c:#E1F5EE;
+  --amarelo:#EF9F27;--amarelo-c:#FAEEDA;
+  --vermelho:#E24B4A;--vermelho-c:#FCEBEB;
+  --rosa:#D4537E;--rosa-c:#FBEAF0;
+  --azul:#185FA5;--azul-c:#E6F1FB;
+  --bg:#F7F6F3;--card:#FFFFFF;--borda:#E8E6E1;--ct:#6B6860;--txt:#1A1916;
+  --s:0 1px 3px rgba(0,0,0,.06);--sm:0 4px 12px rgba(0,0,0,.08);
+}
+[data-theme="dark"]{--bg:#1A1916;--card:#242220;--borda:#3A3835;--ct:#9A9690;--txt:#F0EDE8;--verde-c:#0F3D2E;--amarelo-c:#3D2E0A;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px}
+.hdr{background:var(--verde-e);color:white;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hdr h1{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400}
+.main{max-width:900px;margin:0 auto;padding:1.5rem}
+.card{background:var(--card);border-radius:12px;padding:1.25rem;box-shadow:var(--s);border:1px solid var(--borda);margin-bottom:1rem}
+.doc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+.doc-card{background:var(--card);border:1.5px solid var(--borda);border-radius:12px;padding:1rem;cursor:pointer;transition:all .15s;text-align:center}
+.doc-card:hover{border-color:var(--verde);background:var(--verde-c)}
+.doc-card.active{border-color:var(--verde);background:var(--verde-c)}
+.doc-icon{font-size:28px;margin-bottom:8px}
+.doc-titulo{font-size:13px;font-weight:600;color:var(--txt)}
+.doc-sub{font-size:11px;color:var(--ct);margin-top:3px}
+.panel{display:none}.panel.active{display:block}
+label{font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px}
+input,select,textarea{padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+textarea{resize:vertical}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgr{display:flex;flex-direction:column;gap:5px}
+.fgr.full{grid-column:1/-1}
+.fgr.t3{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sec-title{font-size:13px;font-weight:600;color:var(--verde-e);margin:1.25rem 0 .75rem;padding-bottom:6px;border-bottom:1.5px solid var(--verde-c)}
+.check-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.check-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-radius:8px;cursor:pointer}
+.check-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.check-item label{font-size:13px;text-transform:none;letter-spacing:0;color:var(--txt);cursor:pointer;margin:0;font-weight:400}
+.resp-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:5px;flex-wrap:wrap}
+.resp-label{flex:1;font-size:13px;color:var(--txt)}
+.resp-opts{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.resp-opts label{font-size:13px;text-transform:none;letter-spacing:0;color:var(--txt);margin:0;cursor:pointer;font-weight:400;display:flex;align-items:center;gap:4px}
+.resp-opts input[type=radio]{width:15px;height:15px}
+.qual-input{width:140px!important;padding:4px 8px!important;font-size:12px!important}
+/* ASSINATURA */
+.sig-area{border:2px dashed var(--borda);border-radius:10px;background:white;position:relative;cursor:crosshair}
+.sig-area canvas{display:block;border-radius:8px}
+.sig-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ct);pointer-events:none}
+.sig-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:1.25rem}
+/* DOCS SALVOS */
+.doc-salvo{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--borda)}
+.doc-salvo-info{font-size:13px;color:var(--txt)}
+.doc-salvo-sub{font-size:12px;color:var(--ct)}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--borda);background:var(--card);color:var(--txt);transition:all .15s;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--bg)}
+.btn.pri{background:var(--verde);color:white;border-color:var(--verde)}
+.btn.pri:hover{background:var(--verde-e)}
+.btn.dan{color:var(--vermelho);border-color:var(--vermelho)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.br{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--borda);flex-wrap:wrap}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:300;background:var(--txt);color:var(--bg);padding:11px 18px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:var(--sm);transform:translateY(100px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.verde{background:var(--verde);color:white}
+.toast.vermelho{background:var(--vermelho);color:white}
+.pac-info{background:var(--verde-c);border-radius:10px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:12px}
+.pac-info-nome{font-weight:600;font-size:15px;color:var(--verde-e)}
+.pac-info-sub{font-size:12px;color:var(--ct)}
+.busca-pac{position:relative}
+.sug{position:absolute;left:0;right:0;background:var(--card);border:1.5px solid var(--borda);border-radius:8px;z-index:50;box-shadow:var(--sm);top:100%;margin-top:2px}
+.sug-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--borda);font-size:13px}
+.sug-item:hover{background:var(--bg)}
+.termo-texto{font-size:13px;line-height:1.8;color:var(--txt);background:var(--bg);border-radius:8px;padding:1rem;margin-bottom:1rem;border:1px solid var(--borda)}
+.termo-texto p{margin-bottom:.75rem}
+.termo-texto ul{margin:.5rem 0 .75rem 1.25rem}
+.termo-texto li{margin-bottom:.35rem}
+/* PRINT */
+@media print{
+  .hdr,.no-print,.btn{display:none!important}
+  body{background:white}
+  .card{border:none;box-shadow:none;padding:0}
+  .sig-area canvas{border:1px solid #ccc}
+}
+@media(max-width:600px){
+  .doc-grid{grid-template-columns:repeat(2,1fr)}
+  .fg{grid-template-columns:1fr}
+  .fgr.full{grid-column:1}
+  .fgr.t3{grid-template-columns:1fr 1fr}
+  .check-grid{grid-template-columns:1fr}
+  .sig-row{grid-template-columns:1fr}
+}
+
+@media print {
+  .hdr, #sec-busca, #sec-docs, .br.no-print, 
+  #modal-realizado, button:not([data-print]) { display: none !important; }
+  .panel { display: block !important; }
+  .panel:not(.active) { display: none !important; }
+  body { background: white !important; font-size: 12px; }
+  .card { box-shadow: none !important; border: 1px solid #ddd; page-break-inside: avoid; }
+  .sig-area { border: 1px solid #ccc !important; }
+  /* Orçamento — esconder campos de edição, mostrar versão impressa */
+  #orc-produtos { display: none !important; }
+  .orc-print-produtos { display: block !important; }
+  /* Esconder título "Produtos Utilizados" original na impressão */
+  #orc-produtos-titulo { display: none !important; }
+  .sec-title .btn { display: none !important; }
+  #orc-itens .orc-linha button { display: none !important; }
+  .orc-linha { border: none !important; background: none !important; }
+  /* Rodapé de assinatura */
+  .orc-print-footer { display: block !important; }
+  /* Esconder toast na impressão */
+  .toast { display: none !important; }
+  /* Esconder banner de plano ativo */
+  #banner-plano-ativo { display: none !important; }
+  /* Receituário estético — mostrar só cuidados marcados */
+  #rece-cuidados label { display: none !important; }
+  #rece-cuidados label:has(input:checked) { display: flex !important; }
+  /* Esconder botões de remover */
+  #rece-produtos button, #rec-medicamentos button { display: none !important; }
+  /* Evitar página em branco inicial */
+  body > * { page-break-before: avoid; }
+  .panel.active > .card { margin-top: 0 !important; }
+}
+.orc-print-produtos { display: none; margin-top: 1rem; }
+.orc-print-footer { display: none; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="javascript:history.back()" style="color:white;text-decoration:none;opacity:.8;font-size:20px">←</a>
+    <h1>📄 Documentos — Dra. Anna Carolina Dias</h1>
+  </div>
+  <div id="hdr-pac" style="font-size:12px;opacity:.8"></div>
+</header>
+
+<main class="main">
+  <!-- SELEÇÃO DE PACIENTE -->
+  <div class="card no-print" id="sec-busca">
+    <label>Selecionar paciente</label>
+    <div class="busca-pac">
+      <input type="text" id="busca-pac" placeholder="Digite o nome ou apelido..." oninput="sugPac()" autocomplete="off"/>
+      <div id="sug-pac"></div>
+    </div>
+    <div id="pac-selecionada" style="display:none;margin-top:10px"></div>
+  </div>
+
+  <!-- DOCUMENTOS DISPONÍVEIS -->
+  <div id="sec-docs" style="display:none">
+    <div class="doc-grid">
+      <div class="doc-card" onclick="abrirDoc('anamnese')"><div class="doc-icon">📋</div><div class="doc-titulo">Ficha de Anamnese</div><div class="doc-sub">Avançada</div></div>
+      <div class="doc-card" onclick="abrirDoc('termo-botox')"><div class="doc-icon">💉</div><div class="doc-titulo">Termo de Consentimento</div><div class="doc-sub">Toxina Botulínica</div></div>
+      <div class="doc-card" onclick="abrirDoc('termo-preenchimento')"><div class="doc-icon">💉</div><div class="doc-titulo">Termo de Consentimento</div><div class="doc-sub">Preenchimento Facial</div></div>
+      <div class="doc-card" onclick="abrirDoc('termo-bioestimulador')"><div class="doc-icon">💉</div><div class="doc-titulo">Termo de Consentimento</div><div class="doc-sub">Bioestimuladores</div></div>
+      <div class="doc-card" onclick="abrirDoc('autorizacao-imagem')"><div class="doc-icon">📸</div><div class="doc-titulo">Autorização de</div><div class="doc-sub">Uso de Imagem</div></div>
+      <div class="doc-card" onclick="abrirDoc('orcamento')"><div class="doc-icon">💰</div><div class="doc-titulo">Ficha de Orçamento</div><div class="doc-sub">Tratamentos</div></div>
+      <div class="doc-card" onclick="abrirDoc('planejamento')"><div class="doc-icon">📐</div><div class="doc-titulo">Planejamento</div><div class="doc-sub">Procedimentos Faciais</div></div>
+      <div class="doc-card" onclick="abrirDoc('odontograma')"><div class="doc-icon">🦷</div><div class="doc-titulo">Ficha Clínica</div><div class="doc-sub">Odontograma</div></div>
+      <div class="doc-card" onclick="abrirDoc('anamnese-odonto')"><div class="doc-icon">📝</div><div class="doc-titulo">Anamnese</div><div class="doc-sub">Odontológica</div></div>
+      <div class="doc-card" onclick="abrirDoc('receituario')"><div class="doc-icon">💊</div><div class="doc-titulo">Receituário</div><div class="doc-sub">Médico</div></div>
+      <div class="doc-card" onclick="abrirDoc('receituario-estetico')"><div class="doc-icon">✨</div><div class="doc-titulo">Receituário</div><div class="doc-sub">Produtos Estéticos</div></div>
+    </div>
+
+    <!-- DOCUMENTOS SALVOS -->
+    <div class="card">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px">📁 Documentos salvos</div>
+      <div id="docs-salvos"><div style="color:var(--ct);font-size:13px">Nenhum documento salvo ainda.</div></div>
+    </div>
+  </div>
+
+  <!-- PAINEL: ANAMNESE -->
+  <div id="panel-anamnese" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Ficha de Anamnese Avançada</div>
+      </div>
+      <div id="anamnese-pac-info" class="pac-info"></div>
+      <div class="fg">
+        <div class="fgr full"><label>Endereço</label><input type="text" id="an-endereco"/></div>
+        <div class="fgr"><label>RG</label><input type="text" id="an-rg"/></div>
+        <div class="fgr"><label>CPF</label><input type="text" id="an-cpf"/></div>
+        <div class="fgr"><label>Sexo</label>
+          <select id="an-sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select>
+        </div>
+      </div>
+
+      <div class="sec-title">Histórico de Saúde</div>
+      <div id="an-perguntas-abertas"></div>
+
+      <div class="sec-title">Informações Complementares</div>
+      <div class="check-grid" id="an-checks"></div>
+
+      <div class="sec-title">Anotações e Outras Perguntas</div>
+      <textarea id="an-obs" rows="3" placeholder="Observações adicionais..."></textarea>
+
+      <div class="sec-title">Assinaturas</div>
+      <p style="font-size:13px;color:var(--ct);margin-bottom:1rem">Eu estou ciente e de acordo com todas as informações respondidas acima e declaro-as verdadeiras.</p>
+      <div class="sig-row">
+        <div>
+          <label>Assinatura do(a) Paciente</label>
+          <div class="sig-area"><canvas id="sig-an-pac" width="340" height="120"></canvas><span class="sig-label">Assine aqui</span></div>
+          <button class="btn" style="margin-top:6px;font-size:12px" onclick="limparSig('sig-an-pac')">Limpar</button>
+        </div>
+        <div>
+          <label>Assinatura do(a) Profissional</label>
+          <div class="sig-area"><canvas id="sig-an-pro" width="340" height="120"></canvas><span class="sig-label">Assine aqui</span></div>
+          <button class="btn" style="margin-top:6px;font-size:12px" onclick="limparSig('sig-an-pro')">Limpar</button>
+        </div>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('anamnese')">✓ Salvar documento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL: TERMOS DE CONSENTIMENTO -->
+  <div id="panel-termo-botox" class="panel"><div id="conteudo-termo-botox"></div></div>
+  <div id="panel-termo-preenchimento" class="panel"><div id="conteudo-termo-preenchimento"></div></div>
+  <div id="panel-termo-bioestimulador" class="panel"><div id="conteudo-termo-bioestimulador"></div></div>
+
+  <!-- PAINEL: AUTORIZAÇÃO DE IMAGEM -->
+  <div id="panel-autorizacao-imagem" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Autorização de Uso de Imagem</div>
+      </div>
+      <div id="imagem-pac-info" class="pac-info"></div>
+      <div class="fg" style="margin-bottom:1rem">
+        <div class="fgr"><label>RG</label><input type="text" id="img-rg"/></div>
+        <div class="fgr"><label>CPF</label><input type="text" id="img-cpf"/></div>
+      </div>
+      <div class="termo-texto">
+        <p>Eu, <strong id="img-nome-display">___</strong>, portador(a) do RG e CPF acima, autorizo expressamente o uso de minha imagem para fins relacionados à clínica e profissional onde estou realizando meus procedimentos.</p>
+        <ul>
+          <li>Autorizo a utilização da minha imagem em fotografias e vídeos para fins de publicidade do(a) profissional incluindo a divulgação em materiais impressos, eletrônicos e digitais, tais como folhetos, panfletos, banners, websites, redes sociais, entre outros meios de divulgação.</li>
+          <li>Autorizo a divulgação das imagens em redes sociais, tais como Facebook, Instagram, Twitter, YouTube, LinkedIn, entre outras, com o objetivo de promover os serviços prestados pelo(a) profissional, compartilhar informações educativas relacionadas à saúde e destacar casos clínicos exemplares.</li>
+          <li>Autorizo a utilização da minha imagem em apresentações, palestras e participações em congressos, seminários e eventos científicos relacionados ao procedimento no qual estou realizando onde o(a) profissional responsável esteja representando e divulgando seus serviços.</li>
+          <li>Entendo que o(a) profissional responsável se compromete a utilizar as imagens de forma ética e profissional, preservando minha privacidade e confidencialidade, e não divulgando informações pessoais ou confidenciais.</li>
+          <li>Compreendo que minha imagem poderá ser visualizada por um público amplo, incluindo pacientes atuais e potenciais, profissionais de saúde, estudantes e demais interessados na área.</li>
+          <li>Estou ciente de que esta autorização é voluntária e posso revogá-la a qualquer momento, mediante solicitação por escrito ao(a) profissional responsável.</li>
+          <li>Concordo que o(a) profissional responsável não serão responsáveis por qualquer uso indevido, alteração ou divulgação não autorizada das imagens por terceiros.</li>
+        </ul>
+        <p>Declaro ter lido e compreendido os termos desta autorização antes de assinar este documento.</p>
+      </div>
+      <div class="sec-title">Assinaturas</div>
+      <div class="sig-row">
+        <div>
+          <label>Assinatura do(a) Paciente</label>
+          <div class="sig-area"><canvas id="sig-img-pac" width="340" height="120"></canvas><span class="sig-label">Assine aqui</span></div>
+          <button class="btn" style="margin-top:6px;font-size:12px" onclick="limparSig('sig-img-pac')">Limpar</button>
+        </div>
+        <div>
+          <label>Assinatura do(a) Profissional</label>
+          <div class="sig-area"><canvas id="sig-img-pro" width="340" height="120"></canvas><span class="sig-label">Assine aqui</span></div>
+          <button class="btn" style="margin-top:6px;font-size:12px" onclick="limparSig('sig-img-pro')">Limpar</button>
+        </div>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('autorizacao-imagem')">✓ Salvar documento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL: ORÇAMENTO -->
+  <div id="panel-orcamento" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Ficha de Orçamento</div>
+      </div>
+      <div id="orc-pac-info" class="pac-info"></div>
+      <div class="sec-title">Tratamentos Sugeridos</div>
+      <div id="orc-itens"></div>
+      <button class="btn" style="margin-bottom:1rem" onclick="addItemOrc()">+ Adicionar tratamento</button>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:10px 14px;background:var(--verde-c);border-radius:8px">
+        <span style="font-weight:600;color:var(--verde-e)">TOTAL:</span>
+        <span style="font-size:18px;font-weight:600;color:var(--verde-e)" id="orc-total">R$ 0,00</span>
+      </div>
+      <!-- SEÇÃO PRODUTOS UTILIZADOS -->
+      <div id="orc-produtos-titulo" class="sec-title" style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between">
+        <span>📦 Produtos Utilizados</span>
+        <button class="btn sm" onclick="adicionarProdutoOrc()" style="font-size:12px">+ Adicionar produto</button>
+      </div>
+      <div id="orc-produtos" style="margin-bottom:1rem"></div>
+      <!-- Versão de impressão dos produtos -->
+      <div class="orc-print-produtos" id="orc-print-produtos"></div>
+      <!-- FIM SEÇÃO PRODUTOS -->
+      <div class="sec-title">Condições de Pagamento</div>
+      <textarea id="orc-pagamento" rows="3" placeholder="Ex: À vista com 10% de desconto. Parcelado em até 6x sem juros no cartão."></textarea>
+      <div class="sec-title">Outras Informações</div>
+      <textarea id="orc-obs" rows="3" placeholder="Observações importantes..."></textarea>
+      <div class="fgr" style="margin-top:1rem">
+        <label>Validade do Orçamento</label>
+        <input type="date" id="orc-validade"/>
+      </div>
+      <!-- Rodapé de impressão -->
+      <div class="orc-print-footer">
+        <div style="margin-top:1.5rem;padding:8px 12px;background:#f8f9fa;border-radius:6px;font-size:12px;display:flex;justify-content:space-between">
+          <span id="orc-print-emissao-texto"></span>
+          <span id="orc-print-validade-texto"></span>
+        </div>
+        <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Assinatura do Paciente</div>
+          </div>
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Dra. Anna Carolina Dias — CRO 82281</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1rem;font-size:10px;color:#888">
+          Este orçamento tem validade indicada acima. Valores sujeitos a alteração após o vencimento.
+        </div>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="imprimirOrcamento()">🖨️ Imprimir</button>
+        <button class="btn" style="background:var(--verde);color:white;border-color:var(--verde)" onclick="abrirModalRealizado()">✅ Procedimento realizado</button>
+        <button class="btn pri" onclick="salvarDoc('orcamento')">✓ Salvar orçamento</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL: CONFIRMAR PROCEDIMENTO REALIZADO -->
+<div id="modal-realizado" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:520px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;gap:1rem">
+
+    <!-- Cabeçalho -->
+    <div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:2px">✅ Fechar orçamento e registrar atendimento</div>
+      <div style="font-size:13px;color:var(--ct)" id="modal-pac-nome"></div>
+    </div>
+
+    <!-- Data -->
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Data do atendimento</label>
+      <input type="date" id="modal-data" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px" oninput="calcDataVerificacao()"/>
+    </div>
+
+    <!-- Tratamentos -->
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:8px">Tratamentos realizados</label>
+      <div id="modal-lista-trats"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--verde-c);border-radius:8px;margin-top:4px">
+        <span style="font-size:13px;font-weight:600;color:var(--verde-e)">Total selecionado</span>
+        <span style="font-size:16px;font-weight:700;color:var(--verde-e)" id="modal-total-sel">R$ 0,00</span>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div style="border-top:2px dashed var(--borda);padding-top:4px">
+      <div style="font-size:12px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">💰 Dados financeiros</div>
+    </div>
+
+    <!-- Forma de pagamento -->
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Forma de pagamento</label>
+      <select id="modal-pgto" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px" onchange="atualizarInfoParcelasModal()">
+        <option value="pix">💠 Pix</option>
+        <option value="dinheiro">💵 Dinheiro</option>
+        <option value="debito">💳 Débito</option>
+        <option value="credito-1x">💳 Crédito 1x</option>
+        <option value="credito-2x">💳 Crédito 2x</option>
+        <option value="credito-3x">💳 Crédito 3x</option>
+        <option value="credito-4x">💳 Crédito 4x</option>
+        <option value="credito-5x">💳 Crédito 5x</option>
+        <option value="credito-6x">💳 Crédito 6x</option>
+        <option value="credito-10x">💳 Crédito 10x</option>
+        <option value="credito-12x">💳 Crédito 12x</option>
+        <option value="transferencia">🏦 Transferência</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+
+    <!-- Info parcelas -->
+    <div id="modal-info-parcelas" style="display:none;background:var(--amarelo-c,#fffbea);border-radius:8px;padding:10px 12px;font-size:13px;color:#8a6000">
+      📅 As parcelas seguintes serão lançadas automaticamente nos meses seguintes como <strong>a receber</strong>.
+    </div>
+
+    <!-- Status pagamento -->
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Status do pagamento</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--verde);border-radius:8px;cursor:pointer;background:var(--verde-c)">
+          <input type="radio" name="modal-status" value="recebido" checked style="width:16px;height:16px"/>
+          <span style="font-size:13px;font-weight:600;color:var(--verde-e)">✅ Pago agora</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--borda);border-radius:8px;cursor:pointer">
+          <input type="radio" name="modal-status" value="pendente" style="width:16px;height:16px"/>
+          <span style="font-size:13px;font-weight:500;color:var(--ct)">⏳ A receber</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Pagamento parcial -->
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Pagamento parcial?</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+        <input type="checkbox" id="modal-parcial-check" style="width:16px;height:16px;cursor:pointer" onchange="toggleParcial()"/>
+        <label for="modal-parcial-check" style="font-size:13px;cursor:pointer;color:var(--ct)">Paciente pagou uma parte agora e ficou restante</label>
+      </div>
+      <div id="modal-parcial-box" style="display:none;margin-top:10px;background:var(--amarelo-c,#fffbea);border:1.5px solid var(--amarelo,#ef9f27);border-radius:10px;padding:12px;display:none;flex-direction:column;gap:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#8a6000;text-transform:uppercase;letter-spacing:.04em">Valor pago agora (R$)</label>
+            <input type="number" id="modal-entrada" min="0" step="0.01" placeholder="0,00"
+              style="width:100%;padding:8px 10px;border:1.5px solid var(--amarelo,#ef9f27);border-radius:8px;font-size:14px;margin-top:4px"
+              oninput="calcRestante()"/>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#8a6000;text-transform:uppercase;letter-spacing:.04em">Restante (R$)</label>
+            <input type="number" id="modal-restante" min="0" step="0.01" placeholder="0,00" readonly
+              style="width:100%;padding:8px 10px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px;background:var(--bg);color:var(--ct)"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#8a6000;text-transform:uppercase;letter-spacing:.04em">Cobrar restante em</label>
+            <div style="display:flex;gap:6px;margin-top:4px;align-items:center">
+              <input type="number" id="modal-lembrete-dias" min="1" max="365" value="30" placeholder="dias"
+                style="width:70px;padding:8px 10px;border:1.5px solid var(--amarelo,#ef9f27);border-radius:8px;font-size:14px"
+                oninput="calcLembreteData()"/>
+              <span style="font-size:13px;color:#8a6000">dias</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#8a6000;text-transform:uppercase;letter-spacing:.04em">Data de cobrança</label>
+            <input type="date" id="modal-lembrete-data"
+              style="width:100%;padding:8px 10px;border:1.5px solid var(--amarelo,#ef9f27);border-radius:8px;font-size:14px;margin-top:4px"
+              oninput="calcLembreteDias()"/>
+          </div>
+        </div>
+        <div id="modal-lembrete-diasem" style="font-size:12px;color:#8a6000;font-weight:600"></div>
+        <div style="font-size:11px;color:#8a6000">
+          📌 Um lembrete será criado automaticamente para cobrar o restante na data escolhida.<br>
+          ⏳ O valor restante será lançado no financeiro como <strong>a receber</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Observação -->
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Observação (opcional)</label>
+      <input type="text" id="modal-obs-fin" placeholder="Ex: combinou pagar na próxima consulta" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px"/>
+    </div>
+
+    <!-- Divider -->
+    <div style="border-top:2px dashed var(--borda);padding-top:4px">
+      <div style="font-size:12px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">🔬 Verificação pós-procedimento</div>
+    </div>
+
+    <!-- Verificação -->
+    <div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="modal-ver-dias" style="width:auto;padding:9px 11px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px" onchange="calcDataVerificacao()">
+          <option value="0">Sem verificação</option>
+          <option value="7">7 dias</option>
+          <option value="10">10 dias</option>
+          <option value="15" selected>15 dias</option>
+          <option value="21">21 dias</option>
+          <option value="30">30 dias</option>
+          <option value="45">45 dias</option>
+          <option value="60">60 dias</option>
+          <option value="90">90 dias</option>
+        </select>
+        <input type="date" id="modal-ver-data" style="flex:1;padding:9px 11px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px" oninput="sincDiasVerificacao()"/>
+        <span id="modal-ver-diasem" style="font-size:12px;color:var(--verde-e);font-weight:600;white-space:nowrap"></span>
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px">
+      <button class="btn" onclick="fecharModalRealizado()">Cancelar</button>
+      <button class="btn pri" id="btn-confirmar-realizado" onclick="confirmarRealizado()">✅ Confirmar e registrar</button>
+    </div>
+
+  </div>
+</div>
+
+  <!-- PAINEL: PLANEJAMENTO -->
+  <div id="panel-planejamento" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Planejamento de Procedimentos Faciais</div>
+      </div>
+      <div id="plan-pac-info" class="pac-info"></div>
+      <div class="sec-title">Procedimentos a serem realizados</div>
+      <div class="check-grid" id="plan-procs"></div>
+      <div class="fg" style="margin-top:1rem">
+        <div class="fgr"><label>Outros procedimentos</label><input type="text" id="plan-outros1" placeholder="Procedimento adicional..."/></div>
+        <div class="fgr"><label>&nbsp;</label><input type="text" id="plan-outros2" placeholder="Procedimento adicional..."/></div>
+        <div class="fgr full"><label>&nbsp;</label><input type="text" id="plan-outros3" placeholder="Procedimento adicional..."/></div>
+      </div>
+      <div class="sec-title">Toxina Botulínica — Unidades por Região</div>
+      <div id="plan-regioes"></div>
+      <div class="fg" style="margin-top:1rem">
+        <div class="fgr"><label>Validade do produto</label><input type="text" id="plan-validade" placeholder="Ex: 12/2026"/></div>
+        <div class="fgr"><label>Número do lote</label><input type="text" id="plan-lote"/></div>
+        <div class="fgr"><label>Volume de diluição</label><input type="text" id="plan-diluicao" placeholder="Ex: 2,5ml"/></div>
+      </div>
+      <div class="sec-title">Preenchimentos — Região / Volume / Produto</div>
+      <div id="plan-preench"></div>
+      <button class="btn" style="margin-top:8px" onclick="addLinhaPreench()">+ Adicionar linha</button>
+      <div class="sec-title">Espaço para Etiquetas e/ou Anotações</div>
+      <textarea id="plan-anotacoes" rows="4" placeholder="Etiquetas dos produtos, lotes, observações..."></textarea>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('planejamento')">✓ Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL: ODONTOGRAMA -->
+  <div id="panel-odontograma" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Ficha Clínica — Odontograma</div>
+      </div>
+      <div id="odonto-pac-info" class="pac-info"></div>
+      <div class="fg">
+        <div class="fgr"><label>Endereço</label><input type="text" id="od-end"/></div>
+        <div class="fgr"><label>Bairro</label><input type="text" id="od-bairro"/></div>
+        <div class="fgr"><label>Cidade</label><input type="text" id="od-cidade"/></div>
+        <div class="fgr"><label>RG</label><input type="text" id="od-rg"/></div>
+        <div class="fgr"><label>CPF</label><input type="text" id="od-cpf"/></div>
+        <div class="fgr"><label>Responsável</label><input type="text" id="od-resp"/></div>
+      </div>
+      <div class="sec-title">Odontograma</div>
+      <div id="odontograma-container" style="overflow-x:auto"></div>
+      <div class="sec-title">Legenda</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem">
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:16px;background:#E24B4A;border-radius:3px"></div><span style="font-size:12px">Cárie</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:16px;background:#EF9F27;border-radius:3px"></div><span style="font-size:12px">Restauração</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:16px;background:#1D9E75;border-radius:3px"></div><span style="font-size:12px">Hígido</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:16px;background:#185FA5;border-radius:3px"></div><span style="font-size:12px">Indicado extração</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:16px;background:#888;border-radius:3px"></div><span style="font-size:12px">Ausente</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:16px;background:#7C3AED;border-radius:3px"></div><span style="font-size:12px">Prótese</span></div>
+      </div>
+      <div class="sec-title">Tratamentos a serem realizados</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:var(--verde-c)"><th style="padding:8px;text-align:left;border:1px solid var(--borda)">Dente</th><th style="padding:8px;text-align:left;border:1px solid var(--borda)">Tratamento</th><th style="padding:8px;text-align:right;border:1px solid var(--borda)">Valor</th></tr></thead>
+        <tbody id="od-trats"></tbody>
+      </table>
+      <button class="btn" style="margin-top:8px" onclick="addLinhaOdonto()">+ Adicionar linha</button>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:10px;background:var(--verde-c);border-radius:8px;margin-top:8px">
+        <span style="font-weight:600;color:var(--verde-e)">TOTAL:</span>
+        <span style="font-size:16px;font-weight:600;color:var(--verde-e)" id="od-total">R$ 0,00</span>
+      </div>
+      <div class="fg" style="margin-top:1rem">
+        <div class="fgr"><label>Valores válidos por (dias)</label><input type="number" id="od-validade-dias" placeholder="Ex: 30"/></div>
+        <div class="fgr"><label>Forma de pagamento</label><input type="text" id="od-pagamento"/></div>
+        <div class="fgr full"><label>Observações</label><textarea id="od-obs" rows="2"></textarea></div>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('odontograma')">✓ Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL: ANAMNESE ODONTOLÓGICA -->
+  <div id="panel-anamnese-odonto" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Ficha de Exame / Anamnese Odontológica</div>
+      </div>
+      <div id="anodonto-pac-info" class="pac-info"></div>
+      <div class="fg">
+        <div class="fgr"><label>RG</label><input type="text" id="ao-rg"/></div>
+        <div class="fgr"><label>CPF</label><input type="text" id="ao-cpf"/></div>
+        <div class="fgr"><label>Endereço</label><input type="text" id="ao-end"/></div>
+        <div class="fgr"><label>Responsável</label><input type="text" id="ao-resp"/></div>
+      </div>
+      <div class="sec-title">Histórico Médico</div>
+      <div class="sec-title">Histórico Clínico</div>
+      <div style="overflow-x:auto;margin-bottom:1rem">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="background:var(--verde-c)"><th style="padding:8px;border:1px solid var(--borda);text-align:left">Data</th><th style="padding:8px;border:1px solid var(--borda);text-align:left">Histórico</th><th style="padding:8px;border:1px solid var(--borda)">Ass. Dentista</th><th style="padding:8px;border:1px solid var(--borda)">Ass. Paciente</th></tr></thead>
+          <tbody id="ao-historico"></tbody>
+        </table>
+        <button class="btn" style="margin-top:6px" onclick="addLinhaHistorico()">+ Adicionar linha</button>
+      </div>
+      <div class="sec-title">Anamnese Odontológica (Sim/Não)</div>
+      <div id="ao-perguntas"></div>
+      <div class="sec-title">Saúde Bucal</div>
+      <div id="ao-bucal"></div>
+      <div class="fgr" style="margin-top:1rem">
+        <label>Observações gerais</label>
+        <textarea id="ao-obs" rows="3" placeholder="Obs.:"></textarea>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('anamnese-odonto')">✓ Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL: RECEITUÁRIO MÉDICO -->
+  <div id="panel-receituario" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Receituário Médico</div>
+      </div>
+      <div id="rec-pac-info" class="pac-info"></div>
+      <div class="fg" style="margin-bottom:1rem">
+        <div class="fgr"><label>Data</label><input type="date" id="rec-data"/></div>
+        <div class="fgr"><label>CID</label><input type="text" id="rec-cid" placeholder="Ex: Z41.1"/></div>
+      </div>
+      <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>💊 Medicamentos Prescritos</span>
+        <button class="btn sm no-print" onclick="addMedicamento()" style="font-size:12px">+ Adicionar</button>
+      </div>
+      <div id="rec-medicamentos" style="margin-bottom:1rem"></div>
+      <div class="fgr" style="margin-bottom:1rem">
+        <label>Observações / Orientações ao Paciente</label>
+        <textarea id="rec-obs" rows="3" placeholder="Ex: Tomar com alimento. Retornar em caso de reações adversas."></textarea>
+      </div>
+      <!-- Versão impressa -->
+      <div class="orc-print-footer" style="margin-top:2rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem;padding-top:1rem;border-top:1px solid #ddd">
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Assinatura do Paciente</div>
+          </div>
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Dra. Anna Carolina Dias — CRO 82281</div>
+          </div>
+        </div>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('receituario')">✓ Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL: RECEITUÁRIO ESTÉTICO -->
+  <div id="panel-receituario-estetico" class="panel">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+        <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+        <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Receituário de Produtos Estéticos</div>
+      </div>
+      <div id="rece-pac-info" class="pac-info"></div>
+      <div class="fg" style="margin-bottom:1rem">
+        <div class="fgr"><label>Data</label><input type="date" id="rece-data"/></div>
+        <div class="fgr"><label>Procedimento Realizado</label><input type="text" id="rece-procedimento" placeholder="Ex: Toxina Botulínica, Preenchimento Labial"/></div>
+      </div>
+      <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>✨ Produtos Recomendados</span>
+        <button class="btn sm no-print" onclick="addProdutoEstetico()" style="font-size:12px">+ Adicionar</button>
+      </div>
+      <div id="rece-produtos" style="margin-bottom:1rem"></div>
+      <div class="sec-title">Cuidados Pós-Procedimento</div>
+      <div id="rece-cuidados" style="margin-bottom:1rem">
+        <div style="display:grid;gap:8px">
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c1" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Não massagear a área tratada por 24h</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c2" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Evitar exposição ao sol por 7 dias</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c3" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Não praticar atividade física intensa por 24h</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c4" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Usar protetor solar FPS 50+ diariamente</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c5" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Não ingerir bebidas alcoólicas por 24h</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c6" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Não realizar procedimentos estéticos na área por 15 dias</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c7" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Manter a cabeça erguida por 4h após o procedimento</span></label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rece-c8" style="margin-top:2px;width:16px;height:16px;flex-shrink:0"/> <span>Aplicar gelo se houver edema (máx. 10 min cada vez)</span></label>
+        </div>
+      </div>
+      <div class="fgr" style="margin-bottom:1rem">
+        <label>Observações adicionais</label>
+        <textarea id="rece-obs" rows="3" placeholder="Orientações específicas para este paciente..."></textarea>
+      </div>
+      <div class="fgr" style="margin-bottom:1rem">
+        <label>Retorno em</label>
+        <input type="text" id="rece-retorno" placeholder="Ex: 15 dias, 1 mês, 6 meses"/>
+      </div>
+      <!-- Versão impressa -->
+      <div class="orc-print-footer" style="margin-top:2rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem;padding-top:1rem;border-top:1px solid #ddd">
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Assinatura do Paciente</div>
+          </div>
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Dra. Anna Carolina Dias — CRO 82281</div>
+          </div>
+        </div>
+      </div>
+      <div class="br no-print">
+        <button class="btn" onclick="voltarDocs()">← Voltar</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn pri" onclick="salvarDoc('receituario-estetico')">✓ Salvar</button>
+      </div>
+    </div>
+  </div>
+<script>
+const {createClient}=supabase;
+const db=createClient(SB_URL,SB_KEY);
+
+let pacs=[], pacSelecionada=null;
+const HOJE=new Date().toISOString().split('T')[0];
+
+// UTILS
+function toast(m,t=''){const el=document.getElementById('toast');el.textContent=m;el.className='toast show '+t;setTimeout(()=>el.className='toast',3000);}
+function fDt(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function fmtBRL(v){return'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});}
+
+// CARREGAR PACIENTES
+async function carregar(){
+  const{data}=await db.from('pacientes').select('*').order('nome');
+  pacs=data||[];
+  await carregarProdutosEstoque();
+}
+
+// BUSCA PACIENTE
+function sugPac(){
+  const q=document.getElementById('busca-pac').value.toLowerCase().trim();
+  const box=document.getElementById('sug-pac');
+  if(q.length<2){box.innerHTML='';return;}
+  const r=pacs.filter(p=>p.nome.toLowerCase().includes(q)||(p.apelido&&p.apelido.toLowerCase().includes(q))).slice(0,6);
+  if(!r.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="sug">${r.map(p=>`<div class="sug-item" onclick='selPac(${JSON.stringify(p).replace(/'/g,"&#39;")})'><strong>${p.nome}</strong>${p.apelido?` (${p.apelido})`:''}<br><span style="font-size:12px;color:var(--ct)">${p.telefone}</span></div>`).join('')}</div>`;
+}
+
+function selPac(p){
+  pacSelecionada=p;
+  document.getElementById('busca-pac').value=p.nome;
+  document.getElementById('sug-pac').innerHTML='';
+  document.getElementById('pac-selecionada').style.display='block';
+  document.getElementById('pac-selecionada').innerHTML=`<div class="pac-info"><div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}${p.rg?' · RG: '+p.rg:''}</div></div></div>`;
+  document.getElementById('hdr-pac').textContent=p.nome;
+  document.getElementById('sec-docs').style.display='block';
+  carregarDocsSalvos();
+}
+
+document.addEventListener('click',e=>{if(!e.target.closest('#busca-pac')&&!e.target.closest('#sug-pac'))document.getElementById('sug-pac').innerHTML='';});
+
+// DOCUMENTOS SALVOS
+async function carregarDocsSalvos(){
+  if(!pacSelecionada)return;
+  const{data}=await db.from('documentos').select('*').eq('paciente_id',pacSelecionada.id).order('criado_em',{ascending:false});
+  const el=document.getElementById('docs-salvos');
+  if(!data||!data.length){el.innerHTML='<div style="color:var(--ct);font-size:13px">Nenhum documento salvo ainda.</div>';return;}
+  const nomes={anamnese:'📋 Ficha de Anamnese','termo-botox':'💉 Termo - Toxina Botulínica','termo-preenchimento':'💉 Termo - Preenchimento Facial','termo-bioestimulador':'💉 Termo - Bioestimuladores','autorizacao-imagem':'📸 Autorização de Imagem',orcamento:'💰 Ficha de Orçamento',planejamento:'📐 Planejamento de Procedimentos',odontograma:'🦷 Ficha Clínica / Odontograma','anamnese-odonto':'📋 Anamnese Odontológica',receituario:'💊 Receituário Médico','receituario-estetico':'✨ Receituário Estético'};
+  el.innerHTML=data.map(d=>`<div class="doc-salvo"><div><div class="doc-salvo-info">${nomes[d.tipo]||d.tipo}</div><div class="doc-salvo-sub">Salvo em ${fDt(d.data_assinatura||d.criado_em?.split('T')[0])}</div></div><div style="display:flex;gap:6px"><button class="btn" style="padding:6px 10px;font-size:12px" onclick="verDoc('${d.id}','${d.tipo}')">👁 Ver</button><button class="btn dan" style="padding:6px 10px;font-size:12px" onclick="excluirDoc('${d.id}')">🗑</button></div></div>`).join('');
+}
+
+async function excluirDoc(id){
+  // Buscar o documento para verificar o tipo
+  const{data:doc}=await db.from('documentos').select('*').eq('id',id).single();
+  if(!doc){toast('Documento não encontrado','vermelho');return;}
+
+  // Documentos comuns — exclusão simples
+  if(doc.tipo!=='orcamento'){
+    if(!confirm('Excluir este documento?'))return;
+    await db.from('documentos').delete().eq('id',id);
+    toast('Documento excluído');carregarDocsSalvos();
+    return;
+  }
+
+  // ── ORÇAMENTO: exclusão em CASCATA ──
+  if(!confirm('⚠️ EXCLUIR ORÇAMENTO\n\nSerão excluídos também:\n• Lançamentos financeiros vinculados\n• Estorno dos produtos baixados no estoque\n• O plano de tratamento e seus itens\n\nEsta ação não pode ser desfeita. Continuar?'))return;
+
+  let planoId = doc.dados?.plano_id || null;
+
+  // Fallback 1 (docs antigos): plano único criado no mesmo dia
+  if(!planoId && doc.paciente_id){
+    const docData=(doc.criado_em||doc.data_assinatura||'').split('T')[0];
+    if(docData){
+      const{data:planos}=await db.from('planos_tratamento').select('id,criado_em')
+        .eq('paciente_id',doc.paciente_id).gte('criado_em',docData+'T00:00:00').lte('criado_em',docData+'T23:59:59');
+      if(planos&&planos.length===1) planoId=planos[0].id;
+    }
+  }
+
+  // Fallback 2 (docs antigos): match exato dos itens do orçamento com plano_itens
+  if(!planoId && doc.paciente_id && doc.dados?.itens?.length){
+    const{data:planosTodos}=await db.from('planos_tratamento').select('id').eq('paciente_id',doc.paciente_id);
+    for(const pl of (planosTodos||[])){
+      const{data:itensPl}=await db.from('plano_itens').select('procedimento,valor').eq('plano_id',pl.id);
+      if(!itensPl||itensPl.length!==doc.dados.itens.length) continue;
+      const match=doc.dados.itens.every(di=>itensPl.some(ip=>
+        ip.procedimento===di.trat&&Math.abs(parseFloat(ip.valor||0)-parseFloat(di.val||0))<0.01));
+      if(match){planoId=pl.id;break;}
+    }
+  }
+
+  let resumo=[];
+
+  // Excluir lançamentos financeiros por DESCRIÇÃO (cobre lançamentos sem orcamento_id)
+  if(doc.paciente_id && doc.dados?.itens?.length){
+    const descBase=doc.dados.itens.map(i=>i.trat).join(' + ');
+    const{data:pacDoc}=await db.from('pacientes').select('nome').eq('id',doc.paciente_id).single();
+    if(pacDoc?.nome){
+      const descExata=`${descBase} — ${pacDoc.nome}`;
+      // Duas queries .eq separadas (evita problema do .or() com vírgulas na descrição)
+      const{data:l1}=await db.from('financeiro').select('id,valor').eq('paciente_id',doc.paciente_id).eq('descricao',descExata);
+      const{data:l2}=await db.from('financeiro').select('id,valor').eq('paciente_id',doc.paciente_id).eq('descricao',descExata+' (restante)');
+      const lancsDesc=[...(l1||[]),...(l2||[])];
+      if(lancsDesc.length){
+        const ids=lancsDesc.map(l=>l.id);
+        await db.from('financeiro').delete().in('id',ids);
+        const tot=lancsDesc.reduce((s,l)=>s+(l.valor||0),0);
+        resumo.push(`${lancsDesc.length} lançamento(s) financeiro(s) (${tot.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`);
+      }
+    }
+  }
+
+  if(planoId){
+    // 1. Excluir lançamentos financeiros vinculados
+    const{data:lancs}=await db.from('financeiro').select('id,valor').eq('orcamento_id',planoId);
+    if(lancs&&lancs.length){
+      await db.from('financeiro').delete().eq('orcamento_id',planoId);
+      const totalFin=lancs.reduce((s,l)=>s+(l.valor||0),0);
+      resumo.push(`${lancs.length} lançamento(s) financeiro(s) (${totalFin.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`);
+    }
+
+    // 2. Estornar estoque — devolver quantidades e remover movimentos de uso
+    const{data:movs}=await db.from('estoque_movimentos').select('*').eq('plano_id',planoId).eq('tipo','uso');
+    if(movs&&movs.length){
+      for(const mov of movs){
+        const{data:prod}=await db.from('produtos').select('quantidade').eq('id',mov.produto_id).single();
+        if(prod){
+          await db.from('produtos').update({quantidade:(prod.quantidade||0)+(mov.quantidade||0)}).eq('id',mov.produto_id);
+        }
+      }
+      await db.from('estoque_movimentos').delete().eq('plano_id',planoId).eq('tipo','uso');
+      resumo.push(`${movs.length} produto(s) estornado(s) ao estoque`);
+    }
+
+    // 3. Excluir itens e plano de tratamento
+    await db.from('plano_itens').delete().eq('plano_id',planoId);
+    await db.from('planos_tratamento').delete().eq('id',planoId);
+    resumo.push('Plano de tratamento excluído');
+
+    // Limpar estado em memória se for o plano ativo
+    if(window._planoAtual?.id===planoId) window._planoAtual=null;
+  } else {
+    resumo.push('⚠️ Plano não localizado — apenas o documento foi excluído');
+  }
+
+  // 4. Excluir o documento
+  await db.from('documentos').delete().eq('id',id);
+
+  toast('Orçamento excluído ✓ '+(resumo.length?resumo.join(' · '):''),'verde');
+  carregarDocsSalvos();
+}
+
+// ABRIR DOCUMENTO
+async function abrirDoc(tipo){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sec-docs').style.display='none';
+  document.getElementById('sec-busca').style.display='none';
+  if(tipo==='anamnese') abrirAnamnese();
+  else if(tipo==='autorizacao-imagem') abrirAutorizacaoImagem();
+  else if(tipo==='orcamento') await abrirOrcamento();
+  else if(tipo.startsWith('termo-')) abrirTermo(tipo);
+  else if(tipo==='receituario') abrirReceituario();
+  else if(tipo==='receituario-estetico') abrirReceituarioEstetico();
+  const panel=document.getElementById('panel-'+tipo);
+  if(panel) panel.classList.add('active');
+  // Para receituários, adicionar linha inicial após o painel estar ativo
+  if(tipo==='receituario'&&!document.querySelector('#rec-medicamentos > div')) addMedicamento();
+  if(tipo==='receituario-estetico'&&!document.querySelector('#rece-produtos > div')) addProdutoEstetico();
+  window.scrollTo(0,0);
+}
+
+function voltarDocs(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sec-docs').style.display='block';
+  document.getElementById('sec-busca').style.display='block';
+}
+
+// ── RECEITUÁRIO MÉDICO ──
+function abrirReceituario(){
+  const p=pacSelecionada; if(!p) return;
+  document.getElementById('rec-pac-info').innerHTML=`<div class="pac-info-nome">${p.nome}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}</div>`;
+  document.getElementById('rec-data').value=HOJE;
+  document.getElementById('rec-cid').value='';
+  document.getElementById('rec-obs').value='';
+  document.getElementById('rec-medicamentos').innerHTML='';
+  addMedicamento(); // Já abre com 1 medicamento em branco
+}
+
+function addMedicamento(dados){
+  const cont=document.getElementById('rec-medicamentos');
+  const div=document.createElement('div');
+  div.style.cssText='padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--borda);margin-bottom:8px';
+  div.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:start;margin-bottom:6px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--ct)">MEDICAMENTO *</label>
+        <input type="text" class="rec-med-nome" placeholder="Ex: Ibuprofeno 600mg" value="${dados?.nome||''}" style="margin-top:2px"/></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--ct)">QUANTIDADE</label>
+        <input type="text" class="rec-med-qtd" placeholder="Ex: 10 comprimidos" value="${dados?.qtd||''}" style="margin-top:2px"/></div>
+      <button onclick="this.closest('div').parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:18px;margin-top:20px">✕</button>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--ct)">POSOLOGIA (modo de uso)</label>
+      <textarea class="rec-med-posologia" rows="2" placeholder="Ex: Tomar 1 comprimido a cada 8 horas por 5 dias, após as refeições." style="margin-top:2px">${dados?.posologia||''}</textarea></div>`;
+  cont.appendChild(div);
+}
+
+// ── RECEITUÁRIO ESTÉTICO ──
+function abrirReceituarioEstetico(){
+  const p=pacSelecionada; if(!p) return;
+  document.getElementById('rece-pac-info').innerHTML=`<div class="pac-info-nome">${p.nome}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}</div>`;
+  document.getElementById('rece-data').value=HOJE;
+  document.getElementById('rece-procedimento').value='';
+  document.getElementById('rece-obs').value='';
+  document.getElementById('rece-retorno').value='';
+  document.getElementById('rece-produtos').innerHTML='';
+  // Desmarcar todos os cuidados
+  for(let i=1;i<=8;i++) document.getElementById('rece-c'+i).checked=false;
+  addProdutoEstetico();
+}
+
+function addProdutoEstetico(dados){
+  const cont=document.getElementById('rece-produtos');
+  const div=document.createElement('div');
+  div.style.cssText='padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--borda);margin-bottom:8px';
+  div.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:start;margin-bottom:6px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--ct)">PRODUTO *</label>
+        <input type="text" class="rece-prod-nome" placeholder="Ex: Protetor Solar FPS 50+" value="${dados?.nome||''}" style="margin-top:2px"/></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--ct)">FREQUÊNCIA DE USO</label>
+        <input type="text" class="rece-prod-freq" placeholder="Ex: 2x ao dia, manhã e noite" value="${dados?.freq||''}" style="margin-top:2px"/></div>
+      <button onclick="this.closest('div').parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:18px;margin-top:20px">✕</button>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--ct)">ORIENTAÇÃO DE USO</label>
+      <input type="text" class="rece-prod-obs" placeholder="Ex: Aplicar em camadas finas evitando a área dos olhos." value="${dados?.obs||''}" style="margin-top:2px"/></div>`;
+  cont.appendChild(div);
+}
+
+// ── ANAMNESE ──
+const AN_PERGUNTAS=[
+  {id:'trat-estetico',label:'Já fez algum tipo de tratamento estético?',qual:true},
+  {id:'medicamento',label:'Faz uso de algum medicamento?',qual:true},
+  {id:'alergia',label:'Tem alguma alergia (medicamentos, anestesia, etc)?',qual:true},
+  {id:'acidos',label:'Usa ou já usou ácidos na pele?',qual:true},
+  {id:'cuidado-diario',label:'Faz algum tipo de cuidado diário estético facial ou corporal?',qual:true},
+  {id:'trat-medico',label:'Está sob algum tipo de tratamento médico?',qual:true},
+  {id:'cirurgia',label:'Já fez alguma cirurgia ou procedimento de harmonização?',qual:true},
+  {id:'patologia-derm',label:'Alguma patologia dermatológica?',qual:true},
+  {id:'alteracao-vasc',label:'Tem alguma alteração vascular? (petéquias, cianose, eritema, etc)',qual:true},
+];
+const AN_CHECKS=[
+  'É lactante?','Possui alergia a ovo?','Possui alergia a picada de abelha?',
+  'Já teve ou tem herpes?','É ou já foi fumante?','Possui muita exposição ao sol?',
+  'É gestante?','Pratica algum exercício físico?','Tem uma alimentação balanceada?',
+  'Método anticoncepcional?','Ciclo menstrual regular?','Reposição Hormonal?',
+  'Tem alguma prótese?','Hereditariedade de acne?','Tem hematomas com facilidade?',
+  'Tem varizes e/ou varicose?','Possui manchas na pele?','Tem alguma formação sólida na pele?',
+  'Tem alguma doença infectocontagiosa?','Tem alguma doença nos órgãos essenciais?',
+  'Já sofreu algum desmaio ou convulsão?','Já sofreu algum trauma na face?',
+  'Tem alguma doença cardiovascular?','Tem ou já teve algum distúrbio respiratório?',
+  'Faz uso de bebida alcoólica com frequência?','Perdeu ou ganhou peso ultimamente?',
+  'Tem diabetes?','Faz uso de roacutan?','Possui predisposição para queloides?',
+];
+
+function abrirAnamnese(){
+  const p=pacSelecionada;
+  document.getElementById('anamnese-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  // Preencher campos com dados do cadastro
+  if(p.endereco) document.getElementById('an-endereco').value=p.endereco;
+  if(p.rg) document.getElementById('an-rg').value=p.rg;
+  if(p.cpf) document.getElementById('an-cpf').value=p.cpf;
+  if(p.sexo) document.getElementById('an-sexo').value=p.sexo;
+  // Perguntas abertas
+  document.getElementById('an-perguntas-abertas').innerHTML=AN_PERGUNTAS.map(q=>`
+    <div class="resp-row">
+      <span class="resp-label">${q.label}</span>
+      <div class="resp-opts">
+        <label><input type="radio" name="${q.id}" value="sim"> Sim</label>
+        <label><input type="radio" name="${q.id}" value="nao" checked> Não</label>
+        ${q.qual?`<input type="text" class="qual-input" id="qual-${q.id}" placeholder="Qual?" style="display:none" oninput="this.style.display='block'">`:'' }
+      </div>
+    </div>`).join('');
+  AN_PERGUNTAS.forEach(q=>{
+    document.querySelectorAll(`input[name="${q.id}"]`).forEach(r=>r.addEventListener('change',()=>{
+      const qi=document.getElementById('qual-'+q.id);
+      if(qi)qi.style.display=r.value==='sim'?'block':'none';
+    }));
+  });
+  // Checks
+  document.getElementById('an-checks').innerHTML=AN_CHECKS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="anck-${i}"><label for="anck-${i}">${c}</label></div>`).join('');
+  iniciarSig('sig-an-pac');iniciarSig('sig-an-pro');
+  limparSig('sig-an-pac');limparSig('sig-an-pro');
+}
+
+// ── TERMOS DE CONSENTIMENTO ──
+const TERMOS={
+  'termo-botox':{
+    titulo:'Termo de Consentimento — Toxina Botulínica',
+    procedimento:'aplicação de Toxina Botulínica',
+    descricao:'a toxina botulínica é um medicamento injetável usado para tratar determinadas condições médicas, tais como rugas faciais, distúrbios neurológicos e hiperidrose, entre outras.',
+    riscos:['Reações alérgicas, como coceira, vermelhidão, inchaço ou erupções cutâneas','Hematomas, dor ou desconforto no local da injeção','Fraqueza muscular temporária na área tratada','Assimetria facial ou alterações na expressão facial','Infecção no local da injeção','Outras complicações possíveis, que serão explicadas pelo(a) profissional'],
+    beneficios:'os benefícios da aplicação de toxina botulínica podem incluir a redução das rugas e linhas de expressão, melhora dos sintomas de distúrbios neurológicos, redução da sudorese excessiva, entre outros tratamentos discutidos com o(a) profissional.',
+  },
+  'termo-preenchimento':{
+    titulo:'Termo de Consentimento — Preenchimento Facial',
+    procedimento:'Preenchimento Facial e Labial',
+    descricao:'o preenchimento facial e labial envolve a injeção de substâncias para melhorar o contorno, volume e aparência dos lábios e áreas faciais específicas.',
+    riscos:['Reações alérgicas, como coceira, vermelhidão, inchaço ou erupções cutâneas','Hematomas, dor ou desconforto no local da injeção','Infecção no local da injeção','Deslocamento do produto, resultando em assimetria ou alterações na aparência','Formação de nódulos ou granulomas','Necrose tecidual (raro, mas possível)','Outras complicações possíveis, que serão explicadas pelo profissional'],
+    beneficios:'os benefícios do preenchimento facial e labial podem incluir o aumento do volume e definição dos lábios, redução de rugas e sulcos faciais, e melhora da simetria facial.',
+  },
+  'termo-bioestimulador':{
+    titulo:'Termo de Consentimento — Bioestimuladores de Colágeno',
+    procedimento:'Bioestimuladores de Colágeno',
+    descricao:'os bioestimuladores de colágeno são substâncias injetáveis utilizadas para estimular a produção de colágeno na pele, visando melhorar a firmeza, elasticidade e qualidade da pele.',
+    riscos:['Dor, desconforto, inchaço e/ou hematoma no local da injeção','Reações alérgicas, irritação ou inflamação na área tratada','Infecção no local da injeção','Assimetria, irregularidades ou resultados insatisfatórios','Formação de nódulos, granulomas ou reação inflamatória crônica','Outras complicações possíveis, que serão explicadas pelo profissional'],
+    beneficios:'os benefícios da aplicação de bioestimuladores de colágeno podem incluir a melhora da firmeza e elasticidade da pele, redução de rugas e linhas finas, e aumento da luminosidade e qualidade geral da pele.',
+  },
+};
+
+function abrirTermo(tipo){
+  const t=TERMOS[tipo];const p=pacSelecionada;
+  const html=`<div class="card">
+    <div style="text-align:center;margin-bottom:1rem">
+      <img src="https://claudiogallegoadv.github.io/clinica-anna-carolina/logo.jpg" alt="Dra. Anna Carolina" style="height:70px;object-fit:contain;margin-bottom:4px"/>
+      <div style="font-size:11px;color:var(--ct);margin-top:2px">HARMONIZAÇÃO OROFACIAL · CRO 82281 · Tel: (17) 98211-3940</div>
+      <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
+      <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">${t.titulo}</div>
+    </div>
+    <div class="pac-info"><div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div></div>
+    <div class="fg" style="margin-bottom:1rem">
+      <div class="fgr"><label>CPF do Paciente</label><input type="text" id="${tipo}-cpf" value="${p.cpf||''}" placeholder="000.000.000-00"/></div>
+      <div class="fgr"><label>CPF do Profissional</label><input type="text" value="296.114.268-79" readonly/></div>
+    </div>
+    <div class="termo-texto">
+      <p>Eu, <strong>${p.nome}</strong>, declaro estar ciente e concordo em realizar o procedimento de <strong>${t.procedimento}</strong>, conforme orientação e esclarecimentos prestados pela profissional responsável Dra. Anna Carolina Dias.</p>
+      <p>Declaro que recebi informações adequadas sobre o procedimento e suas possíveis complicações, riscos e benefícios. Entendo que ${t.descricao}</p>
+      <p><strong>Natureza do procedimento:</strong> Compreendo que o procedimento de ${t.procedimento} será realizado através de injeções nas áreas específicas acordadas com o(a) profissional responsável.</p>
+      <p><strong>Benefícios e resultados esperados:</strong> Fui informado(a) de que ${t.beneficios} No entanto, entendo que os resultados podem variar de pessoa para pessoa, e não há garantia de resultados completos ou permanentes.</p>
+      <p><strong>Riscos e complicações:</strong> Fui devidamente informado(a) sobre os riscos associados ao procedimento, que podem incluir, mas não se limitar a:</p>
+      <ul>${t.riscos.map(r=>`<li>${r};</li>`).join('')}</ul>
+      <p><strong>Cuidados pós-tratamento:</strong> Fui devidamente instruído(a) sobre os cuidados pós-tratamento. Estou ciente de que podem ser necessárias sessões de acompanhamento para avaliar os resultados e realizar ajustes, se necessário.</p>
+      <p><strong>Sigilo e privacidade:</strong> Concordo que todas as informações relacionadas ao meu tratamento serão mantidas em sigilo de acordo com as leis e regulamentos aplicáveis.</p>
+      <p>Confirmo que li e compreendi completamente este termo de consentimento livre e esclarecido e concordo em seguir as instruções do(a) profissional responsável antes, durante e após o procedimento.</p>
+    </div>
+    <div class="sec-title">Assinaturas</div>
+    <div class="sig-row">
+      <div><label>Assinatura do(a) Paciente</label><div class="sig-area"><canvas id="sig-${tipo}-pac" width="340" height="120"></canvas><span class="sig-label">Assine aqui</span></div><button class="btn" style="margin-top:6px;font-size:12px" onclick="limparSig('sig-${tipo}-pac')">Limpar</button></div>
+      <div><label>Assinatura do(a) Profissional</label><div class="sig-area"><canvas id="sig-${tipo}-pro" width="340" height="120"></canvas><span class="sig-label">Assine aqui</span></div><button class="btn" style="margin-top:6px;font-size:12px" onclick="limparSig('sig-${tipo}-pro')">Limpar</button></div>
+    </div>
+    <div class="br no-print">
+      <button class="btn" onclick="voltarDocs()">← Voltar</button>
+      <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn pri" onclick="salvarDoc('${tipo}')">✓ Salvar documento</button>
+    </div>
+  </div>`;
+  document.getElementById('conteudo-'+tipo).innerHTML=html;
+  iniciarSig(`sig-${tipo}-pac`);iniciarSig(`sig-${tipo}-pro`);
+}
+
+// ── AUTORIZAÇÃO DE IMAGEM ──
+function abrirAutorizacaoImagem(){
+  const p=pacSelecionada;
+  document.getElementById('imagem-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  document.getElementById('img-nome-display').textContent=p.nome;
+  if(p.rg) document.getElementById('img-rg').value=p.rg;
+  if(p.cpf) document.getElementById('img-cpf').value=p.cpf;
+  iniciarSig('sig-img-pac');iniciarSig('sig-img-pro');
+  limparSig('sig-img-pac');limparSig('sig-img-pro');
+}
+
+// ── ORÇAMENTO ──
+// ── ORÇAMENTO ──
+async function abrirOrcamento(){
+  const p=pacSelecionada;
+  if(!p) return;
+  document.getElementById('orc-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  // Buscar plano ativo
+  const{data:planos}=await db.from('planos_tratamento').select('*, plano_itens(*)').eq('paciente_id',p.id).eq('status','ativo').order('criado_em',{ascending:false}).limit(1);
+  const plano=planos?.[0];
+  // Buscar último orçamento salvo para recuperar produtos
+  const{data:docsSalvos}=await db.from('documentos').select('dados').eq('paciente_id',p.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
+  const ultimoOrc=docsSalvos?.[0]?.dados||{};
+  if(plano){
+    window._planoAtual={id:plano.id,itens:plano.plano_itens||[]};
+    document.getElementById('orc-validade').value=plano.validade||ultimoOrc.validade||'';
+    document.getElementById('orc-pagamento').value=plano.condicoes_pagamento||ultimoOrc.pagamento||'';
+    document.getElementById('orc-obs').value='';
+    renderItensPlano();
+    mostrarBannerPlanoAtivo();
+  } else {
+    window._planoAtual=null;
+    document.getElementById('orc-itens').innerHTML='';
+    document.getElementById('orc-validade').value=ultimoOrc.validade||HOJE;
+    document.getElementById('orc-pagamento').value=ultimoOrc.pagamento||'';
+    document.getElementById('orc-obs').value='';
+    addItemOrc();addItemOrc();addItemOrc();
+    esconderBannerPlanoAtivo();
+  }
+  // Restaurar produtos do último orçamento salvo (apenas se não foram baixados)
+  limparProdutosOrc();
+  if(ultimoOrc.produtos&&ultimoOrc.produtos.length&&!ultimoOrc.produtos_baixados){
+    ultimoOrc.produtos.forEach(prod=>adicionarProdutoOrc(prod));
+  }
+  calcTotal();
+}
+
+function addItemOrc(){
+  const el=document.getElementById('orc-itens');
+  const d=document.createElement('div');
+  d.className='orc-linha';
+  d.style.cssText='display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center;margin-bottom:7px';
+  d.innerHTML=`<input type="text" class="orc-trat" list="lista-trats-orc" placeholder="Tratamento..."/>
+    <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01" oninput="calcTotal()" style="text-align:right"/>
+    <button class="btn dan" style="padding:6px 8px" onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>`;
+  el.appendChild(d);
+}
+
+// Lista completa de tratamentos (igual ao cadastro)
+if(!document.getElementById('lista-trats-orc')){
+  const dl=document.createElement('datalist');
+  dl.id='lista-trats-orc';
+  [
+    '── Harmonização Orofacial ──',
+    'Botox (toxina botulínica)','Botox para bruxismo (masseter)','Botox para sorriso gengival',
+    'Preenchimento labial','Preenchimento de bigode chinês','Preenchimento de olheiras',
+    'Preenchimento de mandíbula','Preenchimento de mento (queixo)','Preenchimento de têmporas',
+    'Preenchimento de maçãs do rosto','Radiesse (hidroxiapatita de cálcio)',
+    'Enzima hialuronidase (dissolução)','Bichectomia','Rinomodelação',
+    'Lifting com fios de PDO','Bioestimulador de colágeno','Skinbooster',
+    'PRP / PRF (plasma rico em plaquetas)','Lipo de papada (Deoxicolato)',
+    '── Odontologia Estética ──',
+    'Harmonização do sorriso','Clareamento dental (consultório)','Clareamento dental (caseiro)',
+    'Facetas de porcelana','Facetas de resina','Lentes de contato dental',
+    'Design de sorriso','Restauração estética (resina)','Contorno gengival / Gengivoplastia',
+    'Alongamento de coroa clínica','Micropigmentação labial','Fechamento de diastema (resina)',
+    '── Odontologia Geral ──',
+    'Profilaxia (limpeza dental)','Raspagem e alisamento radicular','Aplicação de flúor',
+    'Aplicação de selante','Consulta de manutenção','Radiografia (RX)',
+    'Restauração (resina composta)','Restauração (amálgama)','Restauração de urgência',
+    '── Endodontia ──',
+    'Tratamento de canal (unirradicular)','Tratamento de canal (birradicular)',
+    'Tratamento de canal (multirradicular)','Retratamento de canal',
+    '── Implantes ──',
+    'Implante dentário','Coroa sobre implante','Enxerto ósseo','Regeneração óssea guiada (ROG)',
+    '── Periodontia ──',
+    'Tratamento periodontal','Cirurgia periodontal','Manutenção periodontal','Enxerto gengival',
+    '── Ortodontia ──',
+    'Aparelho ortodôntico (metálico)','Aparelho ortodôntico (estético)',
+    'Alinhador invisível','Manutenção ortodôntica','Contenção ortodôntica',
+    '── Cirurgia ──',
+    'Extração simples','Extração de siso (terceiro molar)','Frenectomia',
+    'Cirurgia ortognática','Osteotomia',
+    '── Outros ──',
+    'Placa de bruxismo (esplinte)','Placa clareadora','Consulta / avaliação',
+    'Urgência odontológica','Outro'
+  ].forEach(t=>{
+    const op=document.createElement('option');op.value=t;dl.appendChild(op);
+  });
+  document.body.appendChild(dl);
+}
+
+function calcTotal(){
+  let t=0;
+  document.querySelectorAll('#orc-itens .orc-val').forEach(i=>t+=parseFloat(i.value)||0);
+  document.getElementById('orc-total').textContent=fmtBRL(t);
+}
+
+function getOrcItens(){
+  const itens=[];
+  document.querySelectorAll('#orc-itens .orc-linha').forEach(linha=>{
+    const trat=linha.querySelector('.orc-trat')?.value||'';
+    const val=parseFloat(linha.querySelector('.orc-val')?.value)||0;
+    if(trat||val) itens.push({trat,val});
+  });
+  return itens;
+}
+
+// ── ASSINATURA DIGITAL ──
+const sigs={};
+function iniciarSig(id){
+  // Configura eventos de desenho SEM limpar o canvas
+  // A limpeza só acontece via botão "Limpar" (limparSig)
+  const setup=()=>{
+    const canvas=document.getElementById(id);
+    if(!canvas){setTimeout(setup,100);return;}
+    const ctx=canvas.getContext('2d');
+    ctx.strokeStyle='#1A1916';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
+    let drawing=false,lastX=0,lastY=0;
+    function getPos(e){
+      const r=canvas.getBoundingClientRect();
+      if(e.touches){return{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};}
+      return{x:e.clientX-r.left,y:e.clientY-r.top};
+    }
+    canvas.onmousedown=canvas.ontouchstart=(e)=>{e.preventDefault();drawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;};
+    canvas.onmousemove=canvas.ontouchmove=(e)=>{e.preventDefault();if(!drawing)return;const p=getPos(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();lastX=p.x;lastY=p.y;};
+    canvas.onmouseup=canvas.ontouchend=()=>{drawing=false;};
+    canvas.onmouseleave=()=>{drawing=false;};
+    sigs[id]=canvas;
+  };
+  setTimeout(setup,80);
+}
+
+function limparSig(id){const canvas=document.getElementById(id);if(canvas)canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);}
+
+function getSig(id){
+  const canvas=document.getElementById(id);
+  if(!canvas)return null;
+  const ctx=canvas.getContext('2d');
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const hasContent=data.some((v,i)=>i%4===3&&v>0);
+  if(!hasContent)return null;
+  // Comprimir: criar canvas menor e usar JPEG 60%
+  const c2=document.createElement('canvas');
+  c2.width=280;c2.height=100;
+  const ctx2=c2.getContext('2d');
+  ctx2.fillStyle='#fff';ctx2.fillRect(0,0,280,100);
+  ctx2.drawImage(canvas,0,0,280,100);
+  return c2.toDataURL('image/jpeg',0.6);
+}
+
+// ── SALVAR DOCUMENTO ──
+async function salvarDoc(tipo){
+  if(!pacSelecionada){toast('Selecione um paciente primeiro!','vermelho');return;}
+  const sigPac=getSig(`sig-${tipo}-pac`)||getSig(`sig-an-pac`)||getSig(`sig-img-pac`)||null;
+  const sigPro=getSig(`sig-${tipo}-pro`)||getSig(`sig-an-pro`)||getSig(`sig-img-pro`)||null;
+  let dados={};
+  if(tipo==='anamnese'){
+    dados.respostas={};
+    AN_PERGUNTAS.forEach(q=>{
+      let v='nao';
+      document.querySelectorAll(`input[name="${q.id}"]`).forEach(r=>{ if(r.checked) v=r.value; });
+      const qual=document.getElementById('qual-'+q.id)?.value||'';
+      dados.respostas[q.id]={v,qual};
+    });
+    dados.checks={};
+    AN_CHECKS.forEach((_,i)=>{dados.checks[i]=document.getElementById('anck-'+i)?.checked||false;});
+    dados.obs=document.getElementById('an-obs')?.value||'';
+    dados.endereco=document.getElementById('an-endereco')?.value||'';
+    dados.cpf=document.getElementById('an-cpf')?.value||'';
+    dados.rg=document.getElementById('an-rg')?.value||'';
+    dados.sexo=document.getElementById('an-sexo')?.value||'';
+  } else if(tipo==='orcamento'){
+    dados.itens=getOrcItens();
+    dados.pagamento=document.getElementById('orc-pagamento')?.value||'';
+    dados.obs=document.getElementById('orc-obs')?.value||'';
+    dados.validade=document.getElementById('orc-validade')?.value||'';
+    dados.produtos=getProdutosOrcamento();
+  } else if(tipo==='autorizacao-imagem'){
+    dados.rg=document.getElementById('img-rg')?.value||'';
+    dados.cpf=document.getElementById('img-cpf')?.value||'';
+  } else if(tipo==='planejamento'){
+    dados.procs=Array.from(document.querySelectorAll('#plan-procs input:checked')).map(i=>i.nextElementSibling?.textContent||'');
+    dados.outros=[document.getElementById('plan-outros1')?.value||'',document.getElementById('plan-outros2')?.value||'',document.getElementById('plan-outros3')?.value||''];
+    // Regiões toxina - capturar label + valor
+    dados.regioes={};
+    document.querySelectorAll('#plan-regioes > div').forEach((div,i)=>{
+      const inp=div.querySelector('input[type=number]');
+      const lbl=div.querySelector('label');
+      if(inp&&inp.value) dados.regioes[lbl?lbl.textContent:i]=inp.value;
+    });
+    dados.validade=document.getElementById('plan-validade')?.value||'';
+    dados.lote=document.getElementById('plan-lote')?.value||'';
+    dados.diluicao=document.getElementById('plan-diluicao')?.value||'';
+    // Preenchimentos - cada div tem 3 inputs (região, volume, produto)
+    dados.preench=Array.from(document.querySelectorAll('#plan-preench > div')).map(div=>
+      Array.from(div.querySelectorAll('input')).map(i=>i.value)
+    ).filter(row=>row.some(v=>v));
+    dados.anotacoes=document.getElementById('plan-anotacoes')?.value||'';
+  } else if(tipo==='odontograma'){
+    dados.estadoDentes=JSON.parse(JSON.stringify(estadoDentes||{}));
+    dados.trats=Array.from(document.querySelectorAll('#od-trats tr')).map(tr=>{
+      const inputs=tr.querySelectorAll('input');
+      return{dente:inputs[0]?.value||'',trat:inputs[1]?.value||'',val:inputs[2]?.value||''};
+    }).filter(r=>r.dente||r.trat||r.val);
+    dados.end=document.getElementById('od-end')?.value||'';
+    dados.bairro=document.getElementById('od-bairro')?.value||'';
+    dados.cidade=document.getElementById('od-cidade')?.value||'';
+    dados.rg=document.getElementById('od-rg')?.value||'';
+    dados.cpf=document.getElementById('od-cpf')?.value||'';
+    dados.resp=document.getElementById('od-resp')?.value||'';
+    dados.validade=document.getElementById('od-validade-dias')?.value||'';
+    dados.pagamento=document.getElementById('od-pagamento')?.value||'';
+    dados.obs=document.getElementById('od-obs')?.value||'';
+  } else if(tipo==='anamnese-odonto'){
+    dados.rg=document.getElementById('ao-rg')?.value||'';
+    dados.cpf=document.getElementById('ao-cpf')?.value||'';
+    dados.end=document.getElementById('ao-end')?.value||'';
+    dados.resp=document.getElementById('ao-resp')?.value||'';
+    dados.obs=document.getElementById('ao-obs')?.value||'';
+    // Histórico clínico
+    dados.historico=Array.from(document.querySelectorAll('#ao-historico tr')).map(tr=>
+      Array.from(tr.querySelectorAll('input')).map(i=>i.value)
+    ).filter(row=>row.some(v=>v));
+    // Perguntas Sim/Não (anamnese geral)
+    dados.perguntas={};
+    AO_PERGUNTAS.forEach((_,i)=>{
+      const checked=document.querySelector(`input[name="ao-${i}"]:checked`);
+      dados.perguntas[i]=checked?checked.value:'nao';
+    });
+    // Saúde bucal
+    dados.bucal={};
+    AO_BUCAL.forEach((_,i)=>{
+      const checked=document.querySelector(`input[name="aob-${i}"]:checked`);
+      dados.bucal[i]=checked?checked.value:'nao';
+    });
+  } else if(tipo.startsWith('termo-')){
+    dados.cpf=document.getElementById(`${tipo}-cpf`)?.value||'';
+    dados.rg=document.getElementById(`${tipo}-rg`)?.value||'';
+  } else if(tipo==='receituario'){
+    dados.data=document.getElementById('rec-data')?.value||'';
+    dados.cid=document.getElementById('rec-cid')?.value||'';
+    dados.obs=document.getElementById('rec-obs')?.value||'';
+    dados.medicamentos=Array.from(document.querySelectorAll('#rec-medicamentos > div')).map(div=>({
+      nome:div.querySelector('.rec-med-nome')?.value||'',
+      qtd:div.querySelector('.rec-med-qtd')?.value||'',
+      posologia:div.querySelector('.rec-med-posologia')?.value||''
+    })).filter(m=>m.nome);
+  } else if(tipo==='receituario-estetico'){
+    dados.data=document.getElementById('rece-data')?.value||'';
+    dados.procedimento=document.getElementById('rece-procedimento')?.value||'';
+    dados.obs=document.getElementById('rece-obs')?.value||'';
+    dados.retorno=document.getElementById('rece-retorno')?.value||'';
+    dados.produtos=Array.from(document.querySelectorAll('#rece-produtos > div')).map(div=>({
+      nome:div.querySelector('.rece-prod-nome')?.value||'',
+      freq:div.querySelector('.rece-prod-freq')?.value||'',
+      obs:div.querySelector('.rece-prod-obs')?.value||''
+    })).filter(p=>p.nome);
+    dados.cuidados=Array.from({length:8},(_,i)=>document.getElementById('rece-c'+(i+1))?.checked||false);
+  }
+
+
+  const btnSalvar=document.querySelector(`[onclick="salvarDoc('${tipo}')"]`);
+  if(btnSalvar){btnSalvar.disabled=true;btnSalvar.textContent='Salvando...';}
+
+  const{error}=await db.from('documentos').insert({
+    paciente_id:pacSelecionada.id,
+    tipo,
+    dados,
+    assinatura_paciente:sigPac,
+    assinatura_profissional:sigPro,
+    data_assinatura:HOJE
+  });
+
+  if(btnSalvar){btnSalvar.disabled=false;btnSalvar.textContent=tipo==='orcamento'?'✓ Salvar orçamento':'✓ Salvar documento';}
+
+  if(error){
+    console.error('Erro Supabase:', error);
+    alert('Erro ao salvar: ' + (error.message||JSON.stringify(error)));
+    return;
+  }
+  toast('Documento salvo com sucesso! ✓','verde');
+  carregarDocsSalvos();
+  voltarDocs();
+}
+
+async function verDoc(id,tipo){
+  const{data,error}=await db.from('documentos').select('*').eq('id',id).single();
+  if(!data){toast('Erro ao carregar documento','vermelho');return;}
+  const d=data.dados||{};
+
+  // Ativa modo visualização para o iniciarSig não apagar o canvas
+  _modoVer=true;
+
+  // Abre o painel (já preenche os campos base via abrirDoc)
+  await abrirDoc(tipo);
+
+  // Aguarda o DOM renderizar antes de preencher
+  await new Promise(r=>setTimeout(r,120));
+  if(tipo==='orcamento'){
+    // Não sobrescrever itens do plano ativo — apenas condições e validade do documento histórico
+    if(d.pagamento) document.getElementById('orc-pagamento').value=d.pagamento;
+    if(d.obs) document.getElementById('orc-obs').value=d.obs;
+    if(d.validade) document.getElementById('orc-validade').value=d.validade;
+    // Carregar produtos utilizados salvos
+    limparProdutosOrc();
+    if(d.produtos&&d.produtos.length){
+      d.produtos.forEach(p=>adicionarProdutoOrc(p));
+    }
+    // Se não tem plano ativo, carregar itens do histórico
+    if(!window._planoAtual?.id){
+      document.getElementById('orc-itens').innerHTML='';
+      const itens=d.itens||[];
+      if(itens.length===0){addItemOrc();addItemOrc();addItemOrc();}
+      else{
+        itens.forEach(item=>{
+          addItemOrc();
+          const linhas=document.querySelectorAll('#orc-itens .orc-linha');
+          const ultima=linhas[linhas.length-1];
+          if(ultima){
+            ultima.querySelector('.orc-trat').value=item.trat||'';
+            ultima.querySelector('.orc-val').value=item.val||'';
+          }
+        });
+      }
+      calcTotal();
+    }
+
+  } else if(tipo==='autorizacao-imagem'){
+    if(d.rg) document.getElementById('img-rg').value=d.rg;
+    if(d.cpf) document.getElementById('img-cpf').value=d.cpf;
+
+  } else if(tipo==='anamnese'){
+    if(d.endereco) document.getElementById('an-endereco').value=d.endereco;
+    if(d.cpf) document.getElementById('an-cpf').value=d.cpf;
+    if(d.rg) document.getElementById('an-rg').value=d.rg;
+    if(d.sexo) document.getElementById('an-sexo').value=d.sexo;
+    if(d.obs) document.getElementById('an-obs').value=d.obs;
+    if(d.respostas){
+      Object.entries(d.respostas).forEach(([qid,resp])=>{
+        const radio=document.querySelector(`input[name="${qid}"][value="${resp.v}"]`);
+        if(radio) radio.checked=true;
+        const qual=document.getElementById('qual-'+qid);
+        if(qual) qual.value=resp.qual||'';
+      });
+    }
+    if(d.checks){
+      Object.entries(d.checks).forEach(([i,v])=>{
+        const el=document.getElementById('anck-'+i);
+        if(el) el.checked=v;
+      });
+    }
+
+  } else if(tipo.startsWith('termo-')){
+    if(d.cpf) document.getElementById(`${tipo}-cpf`).value=d.cpf;
+    if(d.rg) { const rg=document.getElementById(`${tipo}-rg`); if(rg) rg.value=d.rg; }
+
+  } else if(tipo==='planejamento'){
+    if(d.validade) document.getElementById('plan-validade').value=d.validade;
+    if(d.lote) document.getElementById('plan-lote').value=d.lote;
+    if(d.diluicao) document.getElementById('plan-diluicao').value=d.diluicao;
+    if(d.anotacoes) document.getElementById('plan-anotacoes').value=d.anotacoes;
+    if(d.outros){
+      ['plan-outros1','plan-outros2','plan-outros3'].forEach((id,i)=>{
+        const el=document.getElementById(id); if(el) el.value=d.outros[i]||'';
+      });
+    }
+    if(d.procs){
+      document.querySelectorAll('#plan-procs input[type=checkbox]').forEach(cb=>{
+        if(d.procs.includes(cb.nextElementSibling?.textContent)) cb.checked=true;
+      });
+    }
+    // Restaurar regiões toxina botulínica
+    if(d.regioes){
+      document.querySelectorAll('#plan-regioes > div').forEach(div=>{
+        const inp=div.querySelector('input[type=number]');
+        const lbl=div.querySelector('label');
+        if(inp&&lbl){
+          const val=d.regioes[lbl.textContent];
+          if(val) inp.value=val;
+        }
+      });
+    }
+    // Restaurar preenchimentos
+    if(d.preench&&d.preench.length>0){
+      document.getElementById('plan-preench').innerHTML='';
+      d.preench.forEach(row=>{
+        addLinhaPreench();
+        const divs=document.querySelectorAll('#plan-preench > div');
+        const div=divs[divs.length-1];
+        const inputs=div.querySelectorAll('input');
+        row.forEach((v,i)=>{if(inputs[i])inputs[i].value=v;});
+      });
+      // Completar com linhas vazias até 4
+      const atual=document.querySelectorAll('#plan-preench > div').length;
+      for(let i=atual;i<4;i++) addLinhaPreench();
+    }
+  } else if(tipo==='odontograma'){
+    if(d.end) document.getElementById('od-end').value=d.end;
+    if(d.bairro) document.getElementById('od-bairro').value=d.bairro;
+    if(d.cidade) document.getElementById('od-cidade').value=d.cidade;
+    if(d.rg) document.getElementById('od-rg').value=d.rg;
+    if(d.cpf) document.getElementById('od-cpf').value=d.cpf;
+    if(d.resp) document.getElementById('od-resp').value=d.resp;
+    if(d.validade) document.getElementById('od-validade-dias').value=d.validade;
+    if(d.pagamento) document.getElementById('od-pagamento').value=d.pagamento;
+    if(d.obs) document.getElementById('od-obs').value=d.obs;
+    if(d.estadoDentes&&Object.keys(d.estadoDentes).length>0){
+      estadoDentes=d.estadoDentes;
+      renderOdontograma();
+    }
+    if(d.trats&&d.trats.length>0){
+      document.getElementById('od-trats').innerHTML='';
+      d.trats.forEach(r=>{
+        addLinhaOdonto();
+        const trs=document.querySelectorAll('#od-trats tr');
+        const tr=trs[trs.length-1];
+        const inputs=tr.querySelectorAll('input');
+        if(inputs[0]) inputs[0].value=r.dente||'';
+        if(inputs[1]) inputs[1].value=r.trat||'';
+        if(inputs[2]) inputs[2].value=r.val||'';
+      });
+      calcTotalOdonto();
+    }
+  } else if(tipo==='anamnese-odonto'){
+    if(d.rg) document.getElementById('ao-rg').value=d.rg;
+    if(d.cpf) document.getElementById('ao-cpf').value=d.cpf;
+    if(d.end) document.getElementById('ao-end').value=d.end;
+    if(d.resp) document.getElementById('ao-resp').value=d.resp;
+    if(d.obs) document.getElementById('ao-obs').value=d.obs;
+    // Restaurar histórico clínico
+    if(d.historico&&d.historico.length>0){
+      document.getElementById('ao-historico').innerHTML='';
+      d.historico.forEach(row=>{
+        addLinhaHistorico();
+        const trs=document.querySelectorAll('#ao-historico tr');
+        const tr=trs[trs.length-1];
+        const inputs=tr.querySelectorAll('input');
+        row.forEach((v,i)=>{if(inputs[i])inputs[i].value=v;});
+      });
+      const atual=document.querySelectorAll('#ao-historico tr').length;
+      for(let i=atual;i<5;i++) addLinhaHistorico();
+    }
+    if(d.perguntas){
+      Object.entries(d.perguntas).forEach(([i,v])=>{
+        const radio=document.querySelector(`input[name="ao-${i}"][value="${v}"]`);
+        if(radio) radio.checked=true;
+      });
+    }
+    if(d.bucal){
+      Object.entries(d.bucal).forEach(([i,v])=>{
+        const radio=document.querySelector(`input[name="aob-${i}"][value="${v}"]`);
+        if(radio) radio.checked=true;
+      });
+    }
+  } else if(tipo==='receituario'){
+    if(d.data) document.getElementById('rec-data').value=d.data;
+    if(d.cid)  document.getElementById('rec-cid').value=d.cid;
+    if(d.obs)  document.getElementById('rec-obs').value=d.obs;
+    if(d.medicamentos&&d.medicamentos.length){
+      document.getElementById('rec-medicamentos').innerHTML='';
+      d.medicamentos.forEach(m=>addMedicamento(m));
+    }
+  } else if(tipo==='receituario-estetico'){
+    if(d.data)         document.getElementById('rece-data').value=d.data;
+    if(d.procedimento) document.getElementById('rece-procedimento').value=d.procedimento;
+    if(d.obs)          document.getElementById('rece-obs').value=d.obs;
+    if(d.retorno)      document.getElementById('rece-retorno').value=d.retorno;
+    if(d.produtos&&d.produtos.length){
+      document.getElementById('rece-produtos').innerHTML='';
+      d.produtos.forEach(p=>addProdutoEstetico(p));
+    }
+    if(d.cuidados){
+      d.cuidados.forEach((v,i)=>{const el=document.getElementById('rece-c'+(i+1));if(el)el.checked=v;});
+    }
+  }
+
+  // Restaurar assinaturas - iniciarSig não limpa mais o canvas, então pode fazer direto
+  const sigIds={
+    pac: [`sig-${tipo}-pac`, `sig-an-pac`, `sig-img-pac`],
+    pro: [`sig-${tipo}-pro`, `sig-an-pro`, `sig-img-pro`]
+  };
+  setTimeout(()=>{
+    if(data.assinatura_paciente) sigIds.pac.forEach(id=>restaurarSig(id,data.assinatura_paciente));
+    if(data.assinatura_profissional) sigIds.pro.forEach(id=>restaurarSig(id,data.assinatura_profissional));
+  },150);
+
+  toast('Documento carregado ✓','verde');
+}
+
+function restaurarSig(id,dataUrl){
+  if(!dataUrl)return;
+  const canvas=document.getElementById(id);
+  if(!canvas)return;
+  const img=new Image();
+  img.onload=()=>{
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  };
+  img.src=dataUrl;
+}
+
+// ── PLANEJAMENTO ──
+const PLAN_PROCS=['Toxina Botulínica','Preenchimento Facial','Preenchimento Labial','Bioestimuladores','Fios de Sustentação','Rinomodelação','Skinbooster','Microagulhamento','Peeling Químico','Bichectomia','Lipo de papada','Harmonização do sorriso'];
+const PLAN_REGIOES=['Frontal','Corrugador','Prócero','Orbicular do olho','Mentual','Levantador do lábio superior','Depressor do septo nasal','Depressor do ângulo da boca','Platisma','Masseter','Outras'];
+
+async function abrirPlanejamento(){
+  const p=pacSelecionada;
+  document.getElementById('plan-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  document.getElementById('plan-procs').innerHTML=PLAN_PROCS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="plck-${i}"><label for="plck-${i}">${c}</label></div>`).join('');
+  document.getElementById('plan-regioes').innerHTML=PLAN_REGIOES.map((r,i)=>`<div style="display:grid;grid-template-columns:140px 80px;gap:8px;align-items:center;margin-bottom:6px"><label style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--txt)">${r}</label><input type="number" id="plan-reg-${i}" placeholder="U" min="0" style="padding:5px 8px;font-size:13px"/></div>`).join('');
+  document.getElementById('plan-preench').innerHTML='';
+  for(let i=0;i<4;i++) addLinhaPreench();
+
+  // Carregar último planejamento salvo automaticamente
+  const {data:docs} = await db.from('documentos').select('*')
+    .eq('paciente_id', p.id).eq('tipo','planejamento')
+    .order('criado_em',{ascending:false}).limit(1);
+
+  if(docs && docs.length > 0){
+    const d = docs[0].dados || {};
+    // Indicar que está carregando dados salvos
+    const info = document.getElementById('plan-pac-info');
+    info.innerHTML += `<div style="font-size:11px;color:var(--verde-e);background:var(--verde-c);padding:4px 10px;border-radius:6px;margin-top:6px;display:inline-block">✅ Carregado do último planejamento (${fDt(docs[0].data_assinatura||docs[0].criado_em?.split('T')[0])})</div>`;
+
+    // Preencher campos
+    if(d.validade) document.getElementById('plan-validade').value=d.validade;
+    if(d.lote) document.getElementById('plan-lote').value=d.lote;
+    if(d.diluicao) document.getElementById('plan-diluicao').value=d.diluicao;
+    if(d.anotacoes) document.getElementById('plan-anotacoes').value=d.anotacoes;
+    if(d.outros){
+      ['plan-outros1','plan-outros2','plan-outros3'].forEach((id,i)=>{
+        const el=document.getElementById(id); if(el) el.value=d.outros[i]||'';
+      });
+    }
+    // Marcar checkboxes
+    if(d.procs){
+      document.querySelectorAll('#plan-procs input[type=checkbox]').forEach(cb=>{
+        if(d.procs.includes(cb.nextElementSibling?.textContent)) cb.checked=true;
+      });
+    }
+    // Regiões toxina
+    if(d.regioes){
+      document.querySelectorAll('#plan-regioes > div').forEach(div=>{
+        const inp=div.querySelector('input[type=number]');
+        const lbl=div.querySelector('label');
+        if(inp&&lbl){ const val=d.regioes[lbl.textContent]; if(val) inp.value=val; }
+      });
+    }
+    // Preenchimentos
+    if(d.preench&&d.preench.length>0){
+      document.getElementById('plan-preench').innerHTML='';
+      d.preench.forEach(row=>{
+        addLinhaPreench();
+        const divs=document.querySelectorAll('#plan-preench > div');
+        const div=divs[divs.length-1];
+        const inputs=div.querySelectorAll('input');
+        row.forEach((v,i)=>{if(inputs[i])inputs[i].value=v;});
+      });
+      const atual=document.querySelectorAll('#plan-preench > div').length;
+      for(let i=atual;i<4;i++) addLinhaPreench();
+    }
+  }
+}
+
+function addLinhaPreench(){
+  const el=document.getElementById('plan-preench');
+  const d=document.createElement('div');
+  d.style.cssText='display:grid;grid-template-columns:1fr 80px 1fr 30px;gap:6px;margin-bottom:6px;align-items:center';
+  d.innerHTML=`<input type="text" placeholder="Região..." style="font-size:13px;padding:6px 8px"/>
+    <input type="text" placeholder="Volume" style="font-size:13px;padding:6px 8px"/>
+    <input type="text" placeholder="Produto..." style="font-size:13px;padding:6px 8px"/>
+    <button class="btn dan" style="padding:5px 8px" onclick="this.parentElement.remove()">✕</button>`;
+  el.appendChild(d);
+}
+
+// ── ODONTOGRAMA ──
+const DENTES_SUP=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+const DENTES_INF=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+const CORES_DENTE={normal:'#F0EDE8',carie:'#E24B4A',restauracao:'#EF9F27',higido:'#1D9E75',extracao:'#185FA5',ausente:'#888',protese:'#7C3AED'};
+let estadoDentes={};
+
+async function abrirOdontograma(){
+  const p=pacSelecionada;
+  estadoDentes={};
+  document.getElementById('odonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  if(p.rg) document.getElementById('od-rg').value=p.rg;
+  if(p.cpf) document.getElementById('od-cpf').value=p.cpf;
+  if(p.endereco){const end=p.endereco.split(',');document.getElementById('od-end').value=p.endereco;}
+  renderOdontograma();
+  document.getElementById('od-trats').innerHTML='';
+  for(let i=0;i<5;i++) addLinhaOdonto();
+  calcTotalOdonto();
+  // Carregar último salvo automaticamente
+  const {data:docs}=await db.from('documentos').select('*').eq('paciente_id',p.id).eq('tipo','odontograma').order('criado_em',{ascending:false}).limit(1);
+  if(docs&&docs.length>0){
+    const d=docs[0].dados||{};
+    const info=document.getElementById('odonto-pac-info');
+    info.innerHTML+=`<div style="font-size:11px;color:var(--verde-e);background:var(--verde-c);padding:4px 10px;border-radius:6px;margin-top:6px;display:inline-block">✅ Carregado do último registro (${fDt(docs[0].data_assinatura||docs[0].criado_em?.split('T')[0])})</div>`;
+    if(d.estadoDentes){estadoDentes=d.estadoDentes;renderOdontograma();}
+    if(d.end) document.getElementById('od-end').value=d.end;
+    if(d.bairro) document.getElementById('od-bairro').value=d.bairro;
+    if(d.cidade) document.getElementById('od-cidade').value=d.cidade;
+    if(d.rg) document.getElementById('od-rg').value=d.rg;
+    if(d.cpf) document.getElementById('od-cpf').value=d.cpf;
+    if(d.resp) document.getElementById('od-resp').value=d.resp;
+    if(d.validade) document.getElementById('od-validade-dias').value=d.validade;
+    if(d.pagamento) document.getElementById('od-pagamento').value=d.pagamento;
+    if(d.obs) document.getElementById('od-obs').value=d.obs;
+    if(d.trats&&d.trats.length>0){
+      document.getElementById('od-trats').innerHTML='';
+      d.trats.forEach(t=>{addLinhaOdonto();const trs=document.querySelectorAll('#od-trats tr');const tr=trs[trs.length-1];const ins=tr.querySelectorAll('input');if(ins[0])ins[0].value=t.dente||'';if(ins[1])ins[1].value=t.trat||'';if(ins[2])ins[2].value=t.val||'';});
+      calcTotalOdonto();
+    }
+  }
+}
+
+function renderOdontograma(){
+  const cont=document.getElementById('odontograma-container');
+  let html=`<div style="font-size:11px;font-weight:600;color:var(--ct);text-align:center;margin-bottom:4px">SUPERIOR</div>
+  <div style="display:flex;justify-content:center;gap:3px;margin-bottom:3px;flex-wrap:wrap">
+    ${DENTES_SUP.map(n=>denteSVG(n,'sup')).join('')}
+  </div>
+  <div style="display:flex;justify-content:center;gap:3px;margin-bottom:8px;font-size:10px;color:var(--ct)">
+    ${DENTES_SUP.map(n=>`<div style="width:34px;text-align:center">${n}</div>`).join('')}
+  </div>
+  <div style="border-top:1px solid var(--borda);margin:4px 0;border-bottom:1px solid var(--borda);padding:4px 0;text-align:center;font-size:10px;color:var(--ct)">DIR ←————————————————— ESQ</div>
+  <div style="display:flex;justify-content:center;gap:3px;margin-top:8px;font-size:10px;color:var(--ct)">
+    ${DENTES_INF.map(n=>`<div style="width:34px;text-align:center">${n}</div>`).join('')}
+  </div>
+  <div style="display:flex;justify-content:center;gap:3px;margin-bottom:4px">
+    ${DENTES_INF.map(n=>denteSVG(n,'inf')).join('')}
+  </div>
+  <div style="font-size:11px;font-weight:600;color:var(--ct);text-align:center;margin-top:4px">INFERIOR</div>
+  <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+    <select id="cor-sel" style="padding:5px 8px;font-size:12px;width:auto">
+      <option value="normal">Hígido</option>
+      <option value="carie">Cárie</option>
+      <option value="restauracao">Restauração</option>
+      <option value="extracao">Indicar extração</option>
+      <option value="ausente">Ausente</option>
+      <option value="protese">Prótese</option>
+    </select>
+    <span style="font-size:12px;color:var(--ct);align-self:center">← Selecione o status e clique no dente</span>
+  </div>`;
+  cont.innerHTML=html;
+}
+
+function denteSVG(num,pos){
+  const cor=CORES_DENTE[estadoDentes[num]||'normal'];
+  return `<div onclick="clicarDente(${num})" style="width:34px;height:34px;background:${cor};border:1.5px solid var(--borda);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:white;transition:all .1s" title="Dente ${num}">${num}</div>`;
+}
+
+function clicarDente(num){
+  const sel=document.getElementById('cor-sel');
+  if(sel)estadoDentes[num]=sel.value;
+  renderOdontograma();
+}
+
+function addLinhaOdonto(){
+  const tb=document.getElementById('od-trats');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="padding:6px;border:1px solid var(--borda)"><input type="text" placeholder="Ex: 16" style="width:60px;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda)"><input type="text" list="lista-trats-odonto" placeholder="Tratamento..." style="width:100%;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda);text-align:right"><input type="number" placeholder="0,00" min="0" step="0.01" style="width:90px;padding:4px;font-size:12px;text-align:right" oninput="calcTotalOdonto()"/></td>`;
+  tb.appendChild(tr);
+}
+
+// Lista pré-fixada de tratamentos odontológicos
+if(!document.getElementById('lista-trats-odonto')){
+  const dl=document.createElement('datalist');
+  dl.id='lista-trats-odonto';
+  ['Profilaxia (limpeza)','Restauração resina','Exodontia simples','Exodontia cirúrgica','Canal radicular','Clareamento dental','Faceta de porcelana','Coroa total','Prótese parcial removível','Prótese total','Implante','Raspagem periodontal','Aplicação de flúor','Selante','Radiografia periapical','Radiografia panorâmica','Gengivoplastia','Tratamento periodontal'].forEach(t=>{
+    const op=document.createElement('option');op.value=t;dl.appendChild(op);
+  });
+  document.body.appendChild(dl);
+}
+
+function calcTotalOdonto(){
+  const inputs=document.querySelectorAll('#od-trats input[type=number]');
+  const t=Array.from(inputs).reduce((s,i)=>s+(parseFloat(i.value)||0),0);
+  const el=document.getElementById('od-total');
+  if(el)el.textContent=fmtBRL(t);
+}
+
+// ── ANAMNESE ODONTOLÓGICA ──
+const AO_PERGUNTAS=[
+  'Está sob tratamento médico?','Faz uso de algum medicamento?','Sofreu ou sofre de alguma perturbação cardíaca?',
+  'Já teve algum problema circulatório?','Sofreu de reumatismo infeccioso?','Sente dores no peito ou nas costas?',
+  'Tem dificuldade para respirar?','Sente-se cansado ao fazer qualquer esforço?','É diabético?',
+  'Costuma sentir tontura, ter desmaios ou convulsões?','É hipertenso?','Tem ou teve doença renal?',
+  'Passou por alguma cirurgia?','Já teve alguma doença no sangue?','Sangra excessivamente quando se machuca?',
+  'Já tomou anestesia para tratar de dente?','Observou alguma reação?','Já extraiu algum dente?',
+  'É alérgico a algum medicamento?','Já tomou penicilina?','Foi observada alguma reação?','É fumante?',
+  'Tem conhecimento de ter alguma doença contagiosa?','Já fez teste HIV?','Está grávida? Quantos meses?',
+];
+const AO_BUCAL=[
+  'É respirador bucal?','Sente mau hálito?','Tem dor facial/muscular?','Sente dor na ATM?',
+  'Tem estalos/ruídos na ATM?','Sua gengiva sangra com facilidade?','Quantas vezes escova os dentes por dia?',
+  'Usa fio dental?','Faz bochecho com soluções anti-séptica?',
+];
+
+function abrirAnamneseOdonto(){
+  const p=pacSelecionada;
+  document.getElementById('anodonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  if(p.rg) document.getElementById('ao-rg').value=p.rg;
+  if(p.cpf) document.getElementById('ao-cpf').value=p.cpf;
+  if(p.endereco) document.getElementById('ao-end').value=p.endereco;
+  document.getElementById('ao-perguntas').innerHTML=AO_PERGUNTAS.map((q,i)=>`
+    <div class="resp-row">
+      <span class="resp-label">${i+1}. ${q}</span>
+      <div class="resp-opts">
+        <label><input type="radio" name="ao-${i}" value="sim"> Sim</label>
+        <label><input type="radio" name="ao-${i}" value="nao" checked> Não</label>
+      </div>
+    </div>`).join('');
+  document.getElementById('ao-bucal').innerHTML=AO_BUCAL.map((q,i)=>`
+    <div class="resp-row">
+      <span class="resp-label">${q}</span>
+      <div class="resp-opts">
+        <label><input type="radio" name="aob-${i}" value="sim"> Sim</label>
+        <label><input type="radio" name="aob-${i}" value="nao" checked> Não</label>
+      </div>
+    </div>`).join('');
+  document.getElementById('ao-historico').innerHTML='';
+  for(let i=0;i<5;i++) addLinhaHistorico();
+}
+
+function addLinhaHistorico(){
+  const tb=document.getElementById('ao-historico');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="padding:6px;border:1px solid var(--borda)"><input type="date" style="width:120px;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda)"><input type="text" placeholder="Histórico..." style="width:100%;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda);text-align:center"><input type="text" placeholder="Ass." style="width:80px;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda);text-align:center"><input type="text" placeholder="Ass." style="width:80px;padding:4px;font-size:12px"/></td>`;
+  tb.appendChild(tr);
+}
+
+// ATUALIZAR abrirDoc para incluir novos tipos
+const _abrirDocOrig=abrirDoc;
+async function abrirDoc(tipo){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sec-docs').style.display='none';
+  document.getElementById('sec-busca').style.display='none';
+  if(tipo==='anamnese') abrirAnamnese();
+  else if(tipo==='autorizacao-imagem') abrirAutorizacaoImagem();
+  else if(tipo==='orcamento') await abrirOrcamento();
+  else if(tipo==='planejamento') await abrirPlanejamento();
+  else if(tipo==='odontograma') await abrirOdontograma();
+  else if(tipo==='anamnese-odonto') abrirAnamneseOdonto();
+  else if(tipo==='receituario') abrirReceituario();
+  else if(tipo==='receituario-estetico') abrirReceituarioEstetico();
+  else if(tipo.startsWith('termo-')) abrirTermo(tipo);
+  const panel=document.getElementById('panel-'+tipo);
+  if(panel)panel.classList.add('active');
+  // Garantir linha inicial nos receituários
+  if(tipo==='receituario'&&!document.querySelector('#rec-medicamentos > div')) addMedicamento();
+  if(tipo==='receituario-estetico'&&!document.querySelector('#rece-produtos > div')) addProdutoEstetico();
+  window.scrollTo(0,0);
+}
+
+function calcDataVerificacao(){
+  const dias=parseInt(document.getElementById('modal-ver-dias')?.value)||0;
+  const dataAtend=document.getElementById('modal-data')?.value;
+  const DIAS_SEM=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  if(dias>0&&dataAtend){
+    const dt=new Date(dataAtend+'T12:00:00');
+    dt.setDate(dt.getDate()+dias);
+    const iso=dt.toISOString().split('T')[0];
+    document.getElementById('modal-ver-data').value=iso;
+    const span=document.getElementById('modal-ver-diasem');
+    if(span) span.textContent=DIAS_SEM[dt.getDay()];
+  } else {
+    document.getElementById('modal-ver-data').value='';
+  }
+}
+
+function sincDiasVerificacao(){
+  const dataVer=document.getElementById('modal-ver-data').value;
+  const dataAtend=document.getElementById('modal-data').value;
+  if(dataVer&&dataAtend){
+    const d1=new Date(dataAtend+'T12:00:00');
+    const d2=new Date(dataVer+'T12:00:00');
+    const diff=Math.round((d2-d1)/(1000*60*60*24));
+    document.getElementById('modal-ver-dias').value=diff>0?diff:0;
+  }
+}
+
+// ── MODAL PROCEDIMENTO REALIZADO ──
+function abrirModalRealizado(){
+  if(!pacSelecionada){toast('Selecione um paciente primeiro!','vermelho');return;}
+  const itens=getOrcItens().filter(i=>i.trat);
+  if(!itens.length){toast('Adicione ao menos um tratamento no orçamento!','vermelho');return;}
+
+  document.getElementById('modal-pac-nome').textContent=pacSelecionada.nome+(pacSelecionada.apelido?` (${pacSelecionada.apelido})`:'');
+  document.getElementById('modal-data').value=HOJE;
+  document.getElementById('modal-data').oninput=calcDataVerificacao;
+  document.getElementById('modal-ver-dias').value=15;
+  document.getElementById('modal-obs-fin').value='';
+  document.getElementById('modal-parcial-check').checked=false;
+  document.getElementById('modal-parcial-box').style.display='none';
+  document.getElementById('modal-entrada').value='';
+  document.getElementById('modal-restante').value='';
+  document.getElementById('modal-lembrete-dias').value=30;
+  document.getElementById('modal-pgto').value='pix';
+  document.querySelector('input[name="modal-status"][value="recebido"]').checked=true;
+  atualizarInfoParcelasModal();
+  calcDataVerificacao();
+
+  // Montar lista de checkboxes com tratamentos e valores
+  document.getElementById('modal-lista-trats').innerHTML=itens.map((item,i)=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--borda);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--bg)" onclick="atualizarTotalSelecionado()">
+      <input type="checkbox" id="modal-trat-${i}" checked style="width:16px;height:16px;cursor:pointer" onchange="atualizarTotalSelecionado()"/>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:500">${item.trat}</div>
+        ${item.val?`<div style="font-size:13px;font-weight:600;color:var(--verde-e)">${fmtBRL(item.val)}</div>`:''}
+      </div>
+    </label>`).join('');
+
+  atualizarTotalSelecionado();
+  document.getElementById('modal-realizado').style.display='flex';
+}
+
+
+// ── PAGAMENTO PARCIAL ──
+function toggleParcial(){
+  const check = document.getElementById('modal-parcial-check').checked;
+  const box = document.getElementById('modal-parcial-box');
+  box.style.display = check ? 'flex' : 'none';
+  if(check){
+    calcRestante();
+    calcLembreteData();
+  }
+}
+
+function calcRestante(){
+  const total = parseFloat(document.getElementById('modal-total-sel')?.textContent?.replace(/[^0-9,]/g,'').replace(',','.')) || 0;
+  const entrada = parseFloat(document.getElementById('modal-entrada')?.value) || 0;
+  const restante = Math.max(0, total - entrada);
+  document.getElementById('modal-restante').value = restante > 0 ? restante.toFixed(2) : '';
+}
+
+function calcLembreteData(){
+  const dias = parseInt(document.getElementById('modal-lembrete-dias')?.value) || 30;
+  const dataAtend = document.getElementById('modal-data')?.value;
+  if(!dataAtend) return;
+  const dt = new Date(dataAtend + 'T12:00:00');
+  dt.setDate(dt.getDate() + dias);
+  const iso = dt.toISOString().split('T')[0];
+  document.getElementById('modal-lembrete-data').value = iso;
+  const DIAS_SEM = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  document.getElementById('modal-lembrete-diasem').textContent = '📅 ' + DIAS_SEM[dt.getDay()] + ', ' + fDt(iso);
+}
+
+function calcLembreteDias(){
+  const dataVenc = document.getElementById('modal-lembrete-data')?.value;
+  const dataAtend = document.getElementById('modal-data')?.value;
+  if(!dataVenc || !dataAtend) return;
+  const d1 = new Date(dataAtend + 'T12:00:00');
+  const d2 = new Date(dataVenc + 'T12:00:00');
+  const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+  document.getElementById('modal-lembrete-dias').value = diff > 0 ? diff : 1;
+  const DIAS_SEM = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  document.getElementById('modal-lembrete-diasem').textContent = '📅 ' + DIAS_SEM[d2.getDay()] + ', ' + fDt(dataVenc);
+}
+
+function atualizarTotalSelecionado(){
+  const itens=getOrcItens().filter(i=>i.trat);
+  const total=itens.reduce((s,item,i)=>{
+    const cb=document.getElementById(`modal-trat-${i}`);
+    return s+(cb?.checked?(parseFloat(item.val)||0):0);
+  },0);
+  document.getElementById('modal-total-sel').textContent=fmtBRL(total);
+  if(document.getElementById('modal-parcial-check')?.checked) calcRestante();
+}
+
+function atualizarInfoParcelasModal(){
+  const pgto=document.getElementById('modal-pgto')?.value||'';
+  const info=document.getElementById('modal-info-parcelas');
+  if(info) info.style.display=pgto.startsWith('credito-')&&pgto!=='credito-1x'?'':'none';
+}
+
+function fecharModalRealizado(){
+  document.getElementById('modal-realizado').style.display='none';
+}
+
+async function confirmarRealizado(){
+  const dataAtend=document.getElementById('modal-data').value;
+  if(!dataAtend){toast('Informe a data do atendimento!','vermelho');return;}
+
+const itens = window._modalRealizados || getOrcItens().filter(i=>i.trat);
+const selecionados = itens;
+if(!selecionados.length){toast('Marque ao menos um tratamento!','vermelho');return;}
+
+  const verDias=parseInt(document.getElementById('modal-ver-dias').value)||0;
+  const verificacaoData=document.getElementById('modal-ver-data').value||null;
+  const pgto=document.getElementById('modal-pgto').value;
+  const status=document.querySelector('input[name="modal-status"]:checked')?.value||'recebido';
+  const obs=document.getElementById('modal-obs-fin').value.trim()||null;
+  const valorTotal=selecionados.reduce((s,i)=>s+(parseFloat(i.val)||0),0);
+
+  const PRAZOS={
+    'Botox (toxina botulínica)':6,'Botox para bruxismo (masseter)':6,'Botox para sorriso gengival':6,
+    'Preenchimento labial':12,'Preenchimento de bigode chinês':12,'Preenchimento de olheiras':12,
+    'Bioestimulador de colágeno':6,'Skinbooster':6,'Lifting com fios de PDO':12,
+    'Profilaxia (limpeza dental)':6,'Clareamento dental (consultório)':12,
+  };
+
+  const trats=selecionados.map(item=>{
+    const prazo=PRAZOS[item.trat]||6;
+    const dtRet=new Date(dataAtend+'T12:00:00');
+    dtRet.setMonth(dtRet.getMonth()+prazo);
+    return{nome:item.trat,prazo,valor:item.val||0,dataAtendimento:dataAtend,dataRetorno:dtRet.toISOString().split('T')[0]};
+  });
+
+  const btn=document.getElementById('btn-confirmar-realizado');
+  btn.disabled=true;btn.textContent='Salvando...';
+
+  // 1. Atualizar paciente
+  const{data:pacAtual}=await db.from('pacientes').select('*').eq('id',pacSelecionada.id).single();
+  if(!pacAtual){btn.disabled=false;btn.textContent='✅ Confirmar e registrar';toast('Erro ao carregar paciente','vermelho');return;}
+
+  const tratsAntigos=(pacAtual.tratamentos_adicionais||[]).filter(t=>t.dataAtendimento!==dataAtend);
+  const tratsFinais=[...tratsAntigos,...trats];
+  const atends=(pacAtual.atendimentos||[]).filter(a=>a.data!==dataAtend);
+  atends.push({data:dataAtend,valor:valorTotal||null,verificacaoDias:verDias,verificacaoData,trats:trats.map(t=>({nome:t.nome,prazo:t.prazo}))});
+
+  const{error:errPac}=await db.from('pacientes').update({
+    tratamentos_adicionais:tratsFinais,
+    tratamento:tratsFinais[tratsFinais.length-1]?.nome||null,
+    data_atendimento:dataAtend,
+    atendimentos:atends
+  }).eq('id',pacSelecionada.id);
+
+  if(errPac){btn.disabled=false;btn.textContent='✅ Confirmar e registrar';toast('Erro: '+errPac.message,'vermelho');return;}
+
+  // 2. Lançar no financeiro
+  if(valorTotal>0){
+    const descFin=selecionados.map(s=>s.trat).join(' + ')+' — '+pacSelecionada.nome;
+    const parcialCheck=document.getElementById('modal-parcial-check')?.checked;
+    const entrada=parseFloat(document.getElementById('modal-entrada')?.value)||0;
+    const restante=parseFloat(document.getElementById('modal-restante')?.value)||0;
+    const lembretaData=document.getElementById('modal-lembrete-data')?.value||null;
+    const lembreteDias=parseInt(document.getElementById('modal-lembrete-dias')?.value)||30;
+
+    if(parcialCheck && entrada > 0 && restante > 0){
+      // Lançar entrada como pago
+      await db.from('financeiro').insert({
+        tipo:'receita', data:dataAtend, descricao:descFin+' (entrada)',
+        categoria:'Harmonização Orofacial', valor:entrada,
+        forma_pagamento:pgto, status:'recebido', obs:obs||null
+      });
+      // Lançar restante como pendente
+      await db.from('financeiro').insert({
+        tipo:'receita', data:lembretaData||dataAtend,
+        descricao:descFin+' (restante)',
+        categoria:'Harmonização Orofacial', valor:restante,
+        forma_pagamento:pgto, status:'pendente',
+        obs:`Vencimento em ${lembreteDias} dias`
+      });
+      // Criar lembrete no sistema
+      if(lembretaData){
+        const pacAtual2=pacs.find(p=>p.id===pacSelecionada.id);
+        const lembretes=pacAtual2?.lembretes||[];
+        lembretes.push({
+          texto:`💰 Cobrar restante: ${fmtBRL(restante)} — ${descFin}`,
+          data:lembretaData,
+          tipo:'cobranca',
+          criado_em:dataAtend
+        });
+        await db.from('pacientes').update({lembretes}).eq('id',pacSelecionada.id);
+      }
+    } else {
+      // Pagamento normal
+      const objFin={
+        tipo:'receita', data:dataAtend, descricao:descFin,
+        categoria:'Harmonização Orofacial', valor:valorTotal,
+        forma_pagamento:pgto, status, obs:obs||null
+      };
+      const{error:errFin}=await db.from('financeiro').insert(objFin);
+      // Se crédito parcelado, criar parcelas futuras
+      if(!errFin&&pgto.startsWith('credito-')&&pgto!=='credito-1x'){
+        const parcelas=parseInt(pgto.split('-')[1]);
+        const valorParc=Math.round((valorTotal/parcelas)*100)/100;
+        const extras=[];
+        for(let i=1;i<parcelas;i++){
+          const dt=new Date(dataAtend+'T12:00:00');
+          dt.setMonth(dt.getMonth()+i);
+          extras.push({...objFin,data:dt.toISOString().split('T')[0],valor:valorParc,
+            descricao:`${descFin} (${i+1}/${parcelas})`,status:'pendente'});
+        }
+        if(extras.length) await db.from('financeiro').insert(extras);
+      }
+    }
+  }
+
+  // Dar baixa automática nos produtos utilizados (se houver)
+  const produtosUsados = getProdutosOrcamento();
+  if(produtosUsados.length > 0){
+    await baixarProdutosEstoque(produtosUsados, pacSelecionada?.id, planoId);
+    // Marcar orçamento como baixado — preserva produtos para histórico
+    const{data:docOrc}=await db.from('documentos').select('id,dados').eq('paciente_id',pacSelecionada.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
+    if(docOrc&&docOrc[0]){
+      const dadosAtualiz={...docOrc[0].dados, produtos_baixados:true};
+      await db.from('documentos').update({dados:dadosAtualiz}).eq('id',docOrc[0].id);
+    }
+  }
+
+  btn.disabled=false;btn.textContent='✅ Confirmar e registrar';
+  fecharModalRealizado();
+  limparProdutosOrc();
+  toast('Atendimento e lançamento financeiro registrados! ✓','verde');
+  carregarDocsSalvos();
+}
+
+// Fechar modal clicando fora
+document.getElementById('modal-realizado').addEventListener('click',e=>{
+  if(e.target===e.currentTarget) fecharModalRealizado();
+});
+
+// ── PRODUTOS NO ORÇAMENTO ──
+let _produtosEstoque = [];
+
+async function carregarProdutosEstoque(){
+  const {data} = await db.from('produtos').select('*').order('nome');
+  _produtosEstoque = data || [];
+}
+
+function adicionarProdutoOrc(dados){
+  const cont = document.getElementById('orc-produtos');
+  const div = document.createElement('div');
+  div.className = 'prod-orc-linha';
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 110px 130px auto;gap:6px;align-items:start;margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--borda)';
+  // Sempre gerar opts do _produtosEstoque atual
+  const opts = _produtosEstoque.map(p=>`<option value="${p.id}" data-codigo="${p.codigo||''}" data-anvisa="${p.anvisa||''}" data-fabricante="${encodeURIComponent(p.fabricante||'')}" data-lote="${p.lote_atual||''}" data-fabricacao="${p.fabricacao_atual||''}" data-validade="${p.validade_atual||''}">${p.nome}</option>`).join('');
+  const qtdVal = (dados&&dados.qtd!=null) ? dados.qtd : 1;
+  const loteVal = (dados&&dados.lote) ? dados.lote : '';
+  const valVal = (dados&&dados.validade) ? dados.validade : '';
+  div.innerHTML = `
+    <div>
+      <select class="prod-orc-sel" onchange="preencherDadosProduto(this)" style="width:100%;padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt)">
+        <option value="">Selecionar produto...</option>${opts}
+      </select>
+      <div class="prod-orc-rastro" style="font-size:11px;color:var(--ct);margin-top:3px;min-height:14px"></div>
+    </div>
+    <input type="number" class="prod-orc-qtd" placeholder="Qtd" min="0.01" step="0.01" value="${qtdVal}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%;text-align:center"/>
+    <input type="text" class="prod-orc-lote" placeholder="Lote" value="${loteVal}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%"/>
+    <input type="date" class="prod-orc-val" value="${valVal}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%"/>
+    <button onclick="this.closest('.prod-orc-linha').remove()" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:18px;padding:4px 2px;line-height:1;margin-top:6px">✕</button>
+  `;
+  cont.appendChild(div);
+  // Setar produto selecionado APÓS o DOM estar pronto
+  if(dados&&dados.produto_id){
+    const sel = div.querySelector('.prod-orc-sel');
+    sel.value = dados.produto_id;
+    // Forçar exibição da rastreabilidade
+    preencherDadosProduto(sel);
+    // Se o select não achou o valor (produto não carregado ainda), tentar novamente
+    if(!sel.value || sel.value !== dados.produto_id){
+      sel.value = dados.produto_id;
+      setTimeout(()=>{
+        sel.value = dados.produto_id;
+        preencherDadosProduto(sel);
+      }, 300);
+    }
+  }
+}
+
+function preencherDadosProduto(sel){
+  const opt = sel.options[sel.selectedIndex];
+  const div = sel.closest('.prod-orc-linha');
+  if(!opt.value){ div.querySelector('.prod-orc-rastro').textContent=''; return; }
+  // Preencher lote/fabricacao/validade a partir do cadastro do produto
+  const loteInput = div.querySelector('.prod-orc-lote');
+  const valInput = div.querySelector('.prod-orc-val');
+  if(!loteInput.value && opt.dataset.lote) loteInput.value = opt.dataset.lote;
+  if(!valInput.value && opt.dataset.validade) valInput.value = opt.dataset.validade;
+  // Se não tem no cadastro, buscar último movimento de entrada
+  if(!loteInput.value && !valInput.value){
+    db.from('estoque_movimentos').select('lote,validade').eq('produto_id',opt.value).eq('tipo','entrada').not('lote','is',null).order('criado_em',{ascending:false}).limit(1).then(({data})=>{
+      if(data&&data[0]){
+        if(!loteInput.value) loteInput.value = data[0].lote||'';
+        if(!valInput.value) valInput.value = data[0].validade||'';
+      }
+    });
+  }
+  // Info rastreabilidade
+  const codigo = opt.dataset.codigo;
+  const anvisa = opt.dataset.anvisa;
+  const fabricante = decodeURIComponent(opt.dataset.fabricante||'');
+  const fabricacao = opt.dataset.fabricacao ? `Fab: ${fDt(opt.dataset.fabricacao)}` : '';
+  const partes = [];
+  if(codigo) partes.push('Cód: '+codigo);
+  if(anvisa) partes.push('ANVISA: '+anvisa);
+  if(fabricante) partes.push(fabricante);
+  if(fabricacao) partes.push(fabricacao);
+  div.querySelector('.prod-orc-rastro').textContent = partes.join(' · ');
+}
+
+function getProdutosOrcamento(){
+  const result = [];
+  document.querySelectorAll('.prod-orc-linha').forEach(div=>{
+    const sel = div.querySelector('.prod-orc-sel');
+    const prodId = sel ? sel.value : '';
+    const qtd = parseFloat(div.querySelector('.prod-orc-qtd').value)||0;
+    const lote = div.querySelector('.prod-orc-lote').value.trim();
+    const validade = div.querySelector('.prod-orc-val').value;
+    const nomeProd = sel && sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : '';
+    const fabricacao = sel && sel.selectedIndex > 0 ? (sel.options[sel.selectedIndex].dataset.fabricacao||null) : null;
+    if(prodId&&qtd>0) result.push({produto_id:prodId,nome:nomeProd,qtd,lote:lote||null,validade:validade||null,fabricacao:fabricacao||null});
+  });
+  return result;
+}
+
+async function baixarProdutosEstoque(produtosUsados, pacienteId, planoId){
+  for(const item of produtosUsados){
+    const movObj={
+      produto_id:item.produto_id, tipo:'uso', quantidade:item.qtd,
+      lote:item.lote||null, fabricacao:item.fabricacao||null, validade:item.validade||null,
+      paciente_id:pacienteId||null,
+      obs:'Baixa automática — procedimento realizado'
+    };
+    // plano_id opcional — só inclui se a coluna existir
+    if(planoId) movObj.plano_id = planoId;
+    const{error:eB}=await db.from('estoque_movimentos').insert(movObj);
+    if(eB){
+      console.error('[ERRO baixarProdutos]', eB.message, JSON.stringify(movObj));
+      // Tentar sem plano_id
+      delete movObj.plano_id;
+      const{error:eB2}=await db.from('estoque_movimentos').insert(movObj);
+      if(eB2){console.error('[ERRO baixarProdutos sem plano_id]', eB2.message); continue;}
+    }
+    const prod = _produtosEstoque.find(p=>p.id===item.produto_id);
+    if(prod){
+      const novaQtd = Math.max(0,(prod.quantidade||0)-item.qtd);
+      await db.from('produtos').update({quantidade:novaQtd}).eq('id',item.produto_id);
+      prod.quantidade = novaQtd;
+    }
+  }
+}
+
+function limparProdutosOrc(){
+  document.getElementById('orc-produtos').innerHTML='';
+}
+
+function imprimirOrcamento(){
+  // Montar versão de impressão dos produtos
+  const produtos = getProdutosOrcamento();
+  const printDiv = document.getElementById('orc-print-produtos');
+  if(produtos.length > 0){
+    printDiv.innerHTML = `
+      <div style="margin-top:1rem">
+        <div style="font-size:13px;font-weight:700;color:#2d6a4f;border-bottom:2px solid #2d6a4f;padding-bottom:4px;margin-bottom:8px">📦 Produtos Utilizados</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#f0f7f4">
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Produto</th>
+              <th style="text-align:center;padding:6px 8px;border:1px solid #ddd">Qtd</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Lote</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Fabricação</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Validade</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Cód. / ANVISA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${produtos.map(p=>{
+              const sel = document.querySelector(`.prod-orc-sel option[value="${p.produto_id}"]`);
+              const codigo = sel?.dataset?.codigo||'';
+              const anvisa = sel?.dataset?.anvisa||'';
+              const fabricante = sel?decodeURIComponent(sel.dataset?.fabricante||''):'';
+              const fabricacao = sel?.dataset?.fabricacao||'';
+              return `<tr>
+                <td style="padding:6px 8px;border:1px solid #ddd">
+                  <strong>${p.nome||'—'}</strong>
+                  ${fabricante?`<br><span style="font-size:10px;color:#666">${fabricante}</span>`:''}
+                </td>
+                <td style="text-align:center;padding:6px 8px;border:1px solid #ddd">${p.qtd}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd">${p.lote||'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd">${fabricacao?fDt(fabricacao):'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd">${p.validade?fDt(p.validade):'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd;font-size:10px">${codigo||''}${anvisa?` / ${anvisa}`:''}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } else {
+    printDiv.innerHTML = '';
+  }
+  // Preencher emissão e validade no rodapé
+  const validade = document.getElementById('orc-validade')?.value;
+  const emissaoEl = document.getElementById('orc-print-emissao-texto');
+  const validadeEl = document.getElementById('orc-print-validade-texto');
+  if(emissaoEl) emissaoEl.innerHTML = `📅 Emitido em: <strong>${new Date().toLocaleDateString('pt-BR')}</strong>`;
+  if(validadeEl) validadeEl.innerHTML = validade
+    ? `⏳ Válido até: <strong>${new Date(validade+'T12:00:00').toLocaleDateString('pt-BR')}</strong>`
+    : '';
+  window.print();
+}
+
+// INICIAR
+carregar().then(()=>{
+  // Verificar parâmetros na URL
+  const params=new URLSearchParams(window.location.search);
+  const pacId=params.get('pac');
+  const docTipo=params.get('doc');
+  const verId=params.get('ver'); // ID do documento para carregar via Ver
+  if(pacId){
+    const p=pacs.find(x=>x.id===pacId);
+    if(p){
+      selPac(p);
+      if(verId){
+        setTimeout(()=>verDoc(verId, docTipo||'orcamento'),500);
+      } else if(docTipo){
+        setTimeout(()=>abrirDoc(docTipo),500);
+      }
+    }
+  }
+});
+</script>
+<div class="toast" id="toast"></div>
+<script>
+(async function autoOpenDoc() {
+  const params = new URLSearchParams(window.location.search);
+  const pacId  = params.get('pac');
+  const docId  = params.get('doc');
+  const tipo   = params.get('tipo');
+
+  if (!pacId) return;
+
+  let tentativas = 0;
+  const aguardar = setInterval(async () => {
+    tentativas++;
+    if (typeof pacs === 'undefined' || !pacs.length) {
+      if (tentativas > 30) clearInterval(aguardar);
+      return;
+    }
+    clearInterval(aguardar);
+
+    const pac = pacs.find(p => p.id === pacId);
+    if (!pac) return;
+
+    selPac(pac);
+
+    if (!docId || !tipo) return;
+
+    await new Promise(r => setTimeout(r, 400));
+
+    const { data: doc } = await db
+      .from('documentos')
+      .select('*')
+      .eq('id', docId)
+      .single();
+
+    if (!doc) return;
+
+    await abrirDoc(tipo);
+
+    await new Promise(r => setTimeout(r, 300));
+
+    preencherDocSalvo(tipo, doc.dados || {});
+
+    window.scrollTo(0, 0);
+  }, 300);
+})();
+
+function preencherDocSalvo(tipo, dados) {
+  try {
+    if (tipo === 'anamnese') {
+      if (dados.endereco) setVal('an-endereco', dados.endereco);
+      if (dados.cpf)      setVal('an-cpf', dados.cpf);
+      if (dados.rg)       setVal('an-rg', dados.rg);
+      if (dados.sexo)     setVal('an-sexo', dados.sexo);
+      if (dados.obs)      setVal('an-obs', dados.obs);
+      if (dados.respostas) {
+        Object.entries(dados.respostas).forEach(([id, r]) => {
+          const radio = document.querySelector(`input[name="${id}"][value="${r.v}"]`);
+          if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+          if (r.qual) setVal('qual-' + id, r.qual);
+        });
+      }
+      if (dados.checks) {
+        Object.entries(dados.checks).forEach(([i, v]) => {
+          const el = document.getElementById('anck-' + i);
+          if (el) el.checked = v;
+        });
+      }
+    } else if (tipo === 'orcamento') {
+      if (dados.pagamento) setVal('orc-pagamento', dados.pagamento);
+      if (dados.obs)       setVal('orc-obs', dados.obs);
+      if (dados.validade)  setVal('orc-validade', dados.validade);
+      // Só sobrescrever itens se NÃO há plano ativo
+      if (!window._planoAtual?.id && dados.itens && dados.itens.length) {
+        const cont = document.getElementById('orc-itens');
+        if (cont) cont.innerHTML = '';
+        dados.itens.forEach(item => {
+          if (typeof addItemOrc === 'function') addItemOrc();
+          const linhas = document.querySelectorAll('#orc-itens .orc-linha');
+          const ultima = linhas[linhas.length - 1];
+          if (ultima) {
+            const trat = ultima.querySelector('.orc-trat');
+            const val  = ultima.querySelector('.orc-val');
+            if (trat) trat.value = item.trat || '';
+            if (val)  val.value  = item.val  || 0;
+          }
+        });
+        if (typeof calcTotal === 'function') calcTotal();
+      }
+    } else if (tipo === 'autorizacao-imagem') {
+      if (dados.rg)  setVal('img-rg', dados.rg);
+      if (dados.cpf) setVal('img-cpf', dados.cpf);
+    } else if (tipo === 'planejamento') {
+      if (dados.validade)  setVal('plan-validade', dados.validade);
+      if (dados.lote)      setVal('plan-lote', dados.lote);
+      if (dados.diluicao)  setVal('plan-diluicao', dados.diluicao);
+      if (dados.anotacoes) setVal('plan-anotacoes', dados.anotacoes);
+      if (dados.outros) dados.outros.forEach((v,i) => { if(v) setVal('plan-outros'+(i+1),v); });
+    } else if (tipo === 'odontograma') {
+      if (dados.end)       setVal('od-end', dados.end);
+      if (dados.bairro)    setVal('od-bairro', dados.bairro);
+      if (dados.cidade)    setVal('od-cidade', dados.cidade);
+      if (dados.rg)        setVal('od-rg', dados.rg);
+      if (dados.cpf)       setVal('od-cpf', dados.cpf);
+      if (dados.resp)      setVal('od-resp', dados.resp);
+      if (dados.obs)       setVal('od-obs', dados.obs);
+      if (dados.pagamento) setVal('od-pagamento', dados.pagamento);
+    } else if (tipo === 'anamnese-odonto') {
+      if (dados.rg)   setVal('ao-rg', dados.rg);
+      if (dados.cpf)  setVal('ao-cpf', dados.cpf);
+      if (dados.end)  setVal('ao-end', dados.end);
+      if (dados.resp) setVal('ao-resp', dados.resp);
+      if (dados.obs)  setVal('ao-obs', dados.obs);
+    } else if (tipo.startsWith('termo-')) {
+      if (dados.cpf) setVal(tipo + '-cpf', dados.cpf);
+    } else if (tipo === 'receituario') {
+      if (dados.data) setVal('rec-data', dados.data);
+      if (dados.cid)  setVal('rec-cid', dados.cid);
+      if (dados.obs)  setVal('rec-obs', dados.obs);
+      if (dados.medicamentos && dados.medicamentos.length) {
+        document.getElementById('rec-medicamentos').innerHTML='';
+        dados.medicamentos.forEach(m=>addMedicamento(m));
+      }
+    } else if (tipo === 'receituario-estetico') {
+      if (dados.data)         setVal('rece-data', dados.data);
+      if (dados.procedimento) setVal('rece-procedimento', dados.procedimento);
+      if (dados.obs)          setVal('rece-obs', dados.obs);
+      if (dados.retorno)      setVal('rece-retorno', dados.retorno);
+      if (dados.produtos && dados.produtos.length) {
+        document.getElementById('rece-produtos').innerHTML='';
+        dados.produtos.forEach(p=>addProdutoEstetico(p));
+      }
+      if (dados.cuidados) {
+        dados.cuidados.forEach((v,i)=>{ const el=document.getElementById('rece-c'+(i+1)); if(el) el.checked=v; });
+      }
+    }
+    if (typeof toast === 'function') toast('Documento carregado ✅', 'verde');
+  } catch(e) {
+    console.error('Erro ao preencher documento:', e);
+  }
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+</script>
+<script>
+// ── PATCH: Salvar dados financeiros no atendimento ──
+// Intercepta confirmarRealizado() para enriquecer o registro
+
+const _confirmarOriginal = window.confirmarRealizado;
+window.confirmarRealizado = async function() {
+  // Capturar dados do modal ANTES de fechar
+  const pgto   = document.getElementById('modal-pgto')?.value || '';
+  const status = document.querySelector('input[name="modal-status"]:checked')?.value || 'recebido';
+  const verif  = document.getElementById('modal-ver-data')?.value || '';
+  const data   = document.getElementById('modal-data')?.value || '';
+  const obs    = document.getElementById('modal-obs-fin')?.value || '';
+
+  // Executar função original
+  await _confirmarOriginal.apply(this, arguments);
+
+  // Após salvar, atualizar o último atendimento com dados financeiros
+  if (!pacSelecionada) return;
+  await new Promise(r => setTimeout(r, 800)); // aguardar salvar
+
+  const { data: pac } = await db
+    .from('pacientes')
+    .select('tratamentos_adicionais')
+    .eq('id', pacSelecionada.id)
+    .single();
+
+  if (!pac?.tratamentos_adicionais) return;
+
+  // Encontrar atendimentos da data e adicionar dados financeiros
+  const trats = pac.tratamentos_adicionais.map(t => {
+    if (t.dataAtendimento === data || !t.formaPagamento) {
+      return { ...t, formaPagamento: pgto, statusPagamento: status, obsFinanceiro: obs };
+    }
+    return t;
+  });
+
+  await db.from('pacientes')
+    .update({ tratamentos_adicionais: trats })
+    .eq('id', pacSelecionada.id);
+};
+</script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// PATCH: Plano de Tratamento Vivo — Orçamento integrado ao financeiro
+// Cole logo antes do </body> no documentos.html
+// (substitui o patch anterior de checkboxes se já estiver lá)
+// ══════════════════════════════════════════════════════════════
+
+// ── ESTADO GLOBAL DO PLANO ──
+window._planoAtual = null; // { id, itens: [{id, procedimento, valor, status, data_realizacao}] }
+
+
+// ── BANNER PLANO ATIVO ──
+function mostrarBannerPlanoAtivo() {
+  let banner = document.getElementById('banner-plano-ativo');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'banner-plano-ativo';
+    banner.style.cssText = 'background:var(--amarelo-c);border:1.5px solid var(--amarelo);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#8a6000;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+    const orcContainer = document.getElementById('orc-pac-info');
+    orcContainer.parentNode.insertBefore(banner, orcContainer.nextSibling);
+  }
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <span>📋 <strong>Plano de tratamento ativo</strong> — continuando orçamento existente.</span>
+    <button onclick="novoPlano()" style="padding:5px 12px;border-radius:6px;background:white;border:1.5px solid var(--amarelo);cursor:pointer;font-size:12px;font-weight:500;color:#8a6000">
+      + Novo plano
+    </button>
+  `;
+}
+
+function esconderBannerPlanoAtivo() {
+  const banner = document.getElementById('banner-plano-ativo');
+  if (banner) banner.style.display = 'none';
+}
+
+function novoPlano() {
+  if (!confirm('Criar novo plano de tratamento? O plano atual ficará como histórico.')) return;
+  window._planoAtual = null;
+  document.getElementById('orc-itens').innerHTML = '';
+  document.getElementById('orc-validade').value = HOJE;
+  document.getElementById('orc-pagamento').value = '';
+  document.getElementById('orc-obs').value = '';
+  addItemOrc(); addItemOrc(); addItemOrc();
+  esconderBannerPlanoAtivo();
+  calcTotal();
+}
+
+// ── RENDERIZAR ITENS DO PLANO ──
+function renderItensPlano() {
+  const el = document.getElementById('orc-itens');
+  el.innerHTML = '';
+  
+  if (!window._planoAtual?.itens?.length) {
+    addItemOrc(); addItemOrc(); addItemOrc();
+    return;
+  }
+
+  window._planoAtual.itens.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'orc-linha';
+    div.dataset.itemId = item.id;
+    
+    const isPago = item.status === 'pago';
+    const isRealizado = item.status === 'realizado';
+    const isCancelado = item.status === 'cancelado';
+    const isOrcado = item.status === 'orcado';
+
+    const statusBadge = isPago 
+      ? `<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:var(--verde-c);color:var(--verde-e);font-weight:600;white-space:nowrap">✅ Pago</span>`
+      : isRealizado 
+      ? `<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:var(--amarelo-c);color:#8a6000;font-weight:600;white-space:nowrap">⏳ A receber</span>`
+      : isCancelado
+      ? `<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:var(--vermelho-c);color:var(--vermelho);font-weight:600;white-space:nowrap">❌ Cancelado</span>`
+      : '';
+
+    div.style.cssText = `display:grid;grid-template-columns:24px 1fr 110px auto 32px;gap:7px;align-items:center;margin-bottom:7px;padding:8px 10px;border-radius:8px;background:${isPago?'var(--verde-c)':isRealizado?'var(--amarelo-c)':isCancelado?'var(--vermelho-c)':'var(--bg)'};border:1px solid ${isPago?'var(--verde)':isRealizado?'var(--amarelo)':isCancelado?'var(--vermelho)':'var(--borda)'}`;
+
+    div.innerHTML = `
+      <input type="checkbox" class="orc-check" ${isRealizado||isPago?'checked':''} ${isPago?'disabled':''} 
+        title="${isPago?'Já pago — não editável':'Marcar como realizado hoje'}"
+        style="width:17px;height:17px;cursor:${isPago?'not-allowed':'pointer'};accent-color:var(--verde)"
+        onchange="atualizarVisualLinha(this)"/>
+      <input type="text" class="orc-trat" list="lista-trats-orc" value="${item.procedimento||''}"
+        ${isPago||isRealizado?'readonly':''} placeholder="Tratamento..."
+        style="background:transparent;border-color:transparent;${isPago||isRealizado?'opacity:.7;cursor:default':''}"/>
+      <input type="number" class="orc-val" value="${item.valor||''}" 
+        ${isPago?'readonly':''} placeholder="R$" min="0" step="0.01"
+        oninput="calcTotal()" style="text-align:right;background:transparent;border-color:transparent;${isPago?'opacity:.7;cursor:default':''}"/>
+      ${statusBadge || '<span></span>'}
+      <button class="btn dan" style="padding:5px 7px;${isPago?'opacity:.3;cursor:not-allowed':''}" 
+        ${isPago?'disabled':''} 
+        onclick="cancelarItem('${item.id}',this)">✕</button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+// ── CANCELAR ITEM ──
+async function cancelarItem(itemId, btn) {
+  if (!confirm('Cancelar este procedimento do plano?')) return;
+  
+  if (window._planoAtual?.id) {
+    await db.from('plano_itens').update({ status: 'cancelado' }).eq('id', itemId);
+    // Atualizar localmente
+    const item = window._planoAtual.itens.find(i => i.id === itemId);
+    if (item) item.status = 'cancelado';
+    renderItensPlano();
+    calcTotal();
+  } else {
+    btn.closest('.orc-linha').remove();
+    calcTotal();
+  }
+}
+
+// ── SOBRESCREVER addItemOrc ──
+window.addItemOrc = function() {
+  const el = document.getElementById('orc-itens');
+  const d = document.createElement('div');
+  d.className = 'orc-linha';
+  d.style.cssText = 'display:grid;grid-template-columns:24px 1fr 110px auto 32px;gap:7px;align-items:center;margin-bottom:7px';
+  d.innerHTML = `
+    <input type="checkbox" class="orc-check" checked title="Realizado hoje"
+      style="width:17px;height:17px;cursor:pointer;accent-color:var(--verde)"
+      onchange="atualizarVisualLinha(this)"/>
+    <input type="text" class="orc-trat" list="lista-trats-orc" placeholder="Tratamento..."/>
+    <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01"
+      oninput="calcTotal()" style="text-align:right"/>
+    <span></span>
+    <button class="btn dan" style="padding:5px 7px"
+      onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>
+  `;
+  el.appendChild(d);
+};
+
+// ── VISUAL DA LINHA ──
+window.atualizarVisualLinha = function(checkbox) {
+  const linha = checkbox.closest('.orc-linha');
+  const inputs = linha.querySelectorAll('input[type=text], input[type=number]');
+  inputs.forEach(inp => {
+    inp.style.opacity = checkbox.checked ? '1' : '0.4';
+    inp.style.textDecoration = checkbox.checked ? 'none' : 'line-through';
+  });
+  calcTotal();
+};
+
+// ── CALCULAR TOTAL ──
+window.calcTotal = function() {
+  let tTotal = 0, tRealizados = 0, tPago = 0;
+  document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+    const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+    const check = linha.querySelector('.orc-check');
+    const itemId = linha.dataset.itemId;
+    const item = window._planoAtual?.itens?.find(i => i.id === itemId);
+    tTotal += val;
+    if (item?.status === 'pago') tPago += val;
+    else if (!check || check.checked) tRealizados += val;
+  });
+
+  const totalEl = document.getElementById('orc-total');
+  if (!totalEl) return;
+  
+  if (tPago > 0 || tRealizados < tTotal - tPago) {
+    let html = '';
+    if (tPago > 0) html += `<span style="font-size:12px;opacity:.7">Pago: ${fmtBRL(tPago)} · </span>`;
+    if (tRealizados > 0) html += `<span>Hoje: ${fmtBRL(tRealizados)}</span>`;
+    const restante = tTotal - tPago - tRealizados;
+    if (restante > 0) html += `<span style="font-size:12px;color:#8a6000"> · A receber: ${fmtBRL(restante)}</span>`;
+    totalEl.innerHTML = html;
+  } else {
+    totalEl.textContent = fmtBRL(tTotal);
+  }
+};
+
+// ── SOBRESCREVER abrirModalRealizado ──
+window.abrirModalRealizado = async function() {
+  if (!pacSelecionada) { toast('Selecione um paciente', 'vermelho'); return; }
+
+  // Coletar realizados e pendentes
+  const realizados = [], pendentes = [];
+  document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+    const trat = linha.querySelector('.orc-trat')?.value || '';
+    const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+    const check = linha.querySelector('.orc-check');
+    const itemId = linha.dataset.itemId;
+    const item = window._planoAtual?.itens?.find(i => i.id === itemId);
+    
+    if (!trat) return;
+    if (item?.status === 'pago') return; // já pago, não aparece
+    if (item?.status === 'cancelado') return; // cancelado, não aparece
+    
+    if (!check || check.checked) realizados.push({ trat, val, itemId });
+    else pendentes.push({ trat, val, itemId });
+  });
+
+  if (!realizados.length) { toast('Marque ao menos um tratamento!', 'vermelho'); return; }
+
+  const totalRealizados = realizados.reduce((s, t) => s + t.val, 0);
+  const totalPendentes = pendentes.reduce((s, t) => s + t.val, 0);
+
+  document.getElementById('modal-pac-nome').textContent = pacSelecionada.nome;
+  document.getElementById('modal-data').value = HOJE;
+
+  const listaEl = document.getElementById('modal-lista-trats');
+  if (listaEl) {
+    let html = `<div style="margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--verde-e);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">✅ Realizados hoje</div>
+      ${realizados.map(t => `<div style="display:flex;justify-content:space-between;padding:7px 10px;background:var(--verde-c);border-radius:7px;margin-bottom:4px;font-size:13px">
+        <span>${t.trat}</span><span style="font-weight:600;color:var(--verde-e)">${fmtBRL(t.val)}</span>
+      </div>`).join('')}
+    </div>`;
+    
+    if (pendentes.length) {
+      html += `<div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:#8a6000;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">⏸ Ficam para próxima vez</div>
+        ${pendentes.map(t => `<div style="display:flex;justify-content:space-between;padding:7px 10px;background:var(--amarelo-c);border-radius:7px;margin-bottom:4px;font-size:13px;opacity:.8">
+          <span>${t.trat}</span><span style="font-weight:600;color:#8a6000">${fmtBRL(t.val)}</span>
+        </div>`).join('')}
+      </div>`;
+    }
+    listaEl.innerHTML = html;
+  }
+
+  const totalEl = document.getElementById('modal-total-sel');
+  if (totalEl) {
+    totalEl.innerHTML = fmtBRL(totalRealizados) + (totalPendentes > 0 
+      ? ` <span style="font-size:12px;color:#8a6000;font-weight:400">(+ ${fmtBRL(totalPendentes)} a receber)</span>` 
+      : '');
+  }
+
+  window._modalRealizados = realizados;
+  window._modalPendentes = pendentes;
+
+  calcDataVerificacao?.();
+  document.getElementById('modal-realizado').style.display = 'flex';
+};
+
+// ── SOBRESCREVER confirmarRealizado ──
+window.confirmarRealizado = async function() {
+  const dataAtend = document.getElementById('modal-data')?.value;
+  if (!dataAtend) { toast('Informe a data do atendimento!', 'vermelho'); return; }
+
+  const realizados = window._modalRealizados || [];
+  const pendentes = window._modalPendentes || [];
+  if (!realizados.length) { toast('Nenhum tratamento selecionado', 'vermelho'); return; }
+
+  const btn = document.getElementById('btn-confirmar-realizado');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+  const pgto = document.getElementById('modal-pgto')?.value || 'pix';
+  const statusPgto = document.querySelector('input[name="modal-status"]:checked')?.value || 'recebido';
+  const obs = document.getElementById('modal-obs-fin')?.value?.trim() || null;
+  const verDias = parseInt(document.getElementById('modal-ver-dias')?.value) || 0;
+  const verData = document.getElementById('modal-ver-data')?.value || null;
+  const isParcial = document.getElementById('modal-parcial-check')?.checked;
+  const entrada = parseFloat(document.getElementById('modal-entrada')?.value) || 0;
+  const lembrData = document.getElementById('modal-lembrete-data')?.value;
+  
+  const totalReal = realizados.reduce((s, t) => s + t.val, 0);
+  const valorPago = isParcial ? entrada : (statusPgto === 'recebido' ? totalReal : 0);
+  const valorPendente = isParcial ? (totalReal - entrada) : (statusPgto === 'pendente' ? totalReal : 0);
+
+  try {
+    // 1. Salvar/atualizar plano de tratamento
+    let planoId = window._planoAtual?.id;
+
+    if (!planoId) {
+      // Criar novo plano
+      const todosItens = [
+        ...realizados.map(t => ({ procedimento: t.trat, valor: t.val, status: 'orcado' })),
+        ...pendentes.map(t => ({ procedimento: t.trat, valor: t.val, status: 'orcado' }))
+      ];
+
+      const descProcs = [...realizados, ...pendentes].map(t => t.trat).join(' + ');
+      const { data: novoPlano, error: ePlano } = await db.from('planos_tratamento').insert({
+        paciente_id: pacSelecionada.id,
+        status: 'ativo',
+        validade: document.getElementById('orc-validade')?.value || null,
+        condicoes_pagamento: document.getElementById('orc-pagamento')?.value || null,
+        obs: descProcs || document.getElementById('orc-obs')?.value || null
+      }).select().single();
+
+      if (ePlano) { console.error('[FIN DEBUG] Erro criar plano:', ePlano); toast('Erro ao criar plano: ' + ePlano.message, 'vermelho'); if (btn) { btn.disabled=false; btn.textContent='✅ Confirmar e registrar'; } return; }
+      planoId = novoPlano?.id;
+
+      // Inserir itens
+      await db.from('plano_itens').insert(
+        todosItens.map(i => ({ ...i, plano_id: planoId, paciente_id: pacSelecionada.id }))
+      );
+
+      // Buscar itens criados para ter os IDs
+      const { data: itens } = await db.from('plano_itens').select('*').eq('plano_id', planoId);
+      window._planoAtual = { id: planoId, itens: itens || [] };
+
+      // Reatribuir itemIds
+      realizados.forEach(r => {
+        const item = itens?.find(i => i.procedimento === r.trat && i.status === 'orcado');
+        if (item) r.itemId = item.id;
+      });
+    }
+
+    // 2. Marcar realizados como 'realizado' ou 'pago'
+    // Garantir que temos os itens do plano para mapear itemIds
+    if (planoId) {
+      const { data: itensAtuais } = await db.from('plano_itens').select('*').eq('plano_id', planoId).eq('status','orcado');
+      // Para cada realizado sem itemId, tentar encontrar pelo nome do procedimento
+      realizados.forEach(r => {
+        if (!r.itemId && itensAtuais) {
+          const item = itensAtuais.find(i => i.procedimento === r.trat || r.trat.includes(i.procedimento) || i.procedimento.includes(r.trat));
+          if (item) r.itemId = item.id;
+        }
+      });
+    }
+
+    for (const r of realizados) {
+      const novoStatus = statusPgto === 'recebido' && !isParcial ? 'pago' : 'realizado';
+      if (r.itemId) {
+        const {error: eItem} = await db.from('plano_itens').update({ 
+          status: novoStatus, 
+          data_realizacao: dataAtend 
+        }).eq('id', r.itemId);
+        if (eItem) console.error('[FIN DEBUG] Erro atualizar item:', eItem, r);
+      } else {
+        console.warn('[FIN DEBUG] itemId não encontrado para:', r.trat);
+      }
+    }
+
+    // 3. Lançar no financeiro
+    const descReal = realizados.map(r => r.trat).join(' + ');
+
+
+    if (valorPago > 0) {
+      const {error: eFin1} = await db.from('financeiro').insert({
+        paciente_id: pacSelecionada.id,
+        orcamento_id: planoId,
+        tipo: 'receita',
+        data: dataAtend,
+        descricao: `${descReal} — ${pacSelecionada.nome}`,
+        categoria: 'Harmonização Orofacial',
+        valor: valorPago,
+        forma_pagamento: pgto,
+        status: 'recebido',
+        obs: obs
+      });
+
+    } else if (totalReal > 0 && statusPgto === 'pendente') {
+      // Status marcado como A receber sem parcial
+      const {error: eFin2} = await db.from('financeiro').insert({
+        paciente_id: pacSelecionada.id,
+        orcamento_id: planoId,
+        tipo: 'receita',
+        data: dataAtend,
+        descricao: `${descReal} — ${pacSelecionada.nome}`,
+        categoria: 'Harmonização Orofacial',
+        valor: totalReal,
+        forma_pagamento: pgto,
+        status: 'pendente',
+        obs: obs
+      });
+
+    }
+
+    // 4. Lançar no financeiro — valor a receber (APENAS pagamento parcial;
+    //    quando status='pendente' sem parcial, o bloco 3 já lançou o valor total)
+    if (isParcial && valorPendente > 0) {
+      const {error: eFin3} = await db.from('financeiro').insert({
+        paciente_id: pacSelecionada.id,
+        orcamento_id: planoId,
+        tipo: 'receita',
+        data: lembrData || dataAtend,
+        descricao: `${descReal} — ${pacSelecionada.nome} (restante)`,
+        categoria: 'Harmonização Orofacial',
+        valor: valorPendente,
+        forma_pagamento: pgto,
+        status: 'pendente',
+        obs: obs
+      });
+
+    }
+
+    // 5. Salvar atendimento no paciente (tratamentos_adicionais)
+    const { data: pacAtual } = await db.from('pacientes').select('*').eq('id', pacSelecionada.id).single();
+    
+    const PRAZOS = {
+      'Botox (toxina botulínica)':6,'Botox para bruxismo (masseter)':6,
+      'Preenchimento labial':12,'Preenchimento de bigode chinês':12,
+      'Preenchimento de olheiras':12,'Bioestimulador de colágeno':6,
+      'Skinbooster':6,'Profilaxia (limpeza dental)':6,'Clareamento dental (consultório)':6,
+    };
+
+    const novosTrats = realizados.map(item => {
+      const prazo = PRAZOS[item.trat] || 6;
+      const dtRet = new Date(dataAtend + 'T12:00:00');
+      dtRet.setMonth(dtRet.getMonth() + prazo);
+      return {
+        nome: item.trat,
+        valor: item.val,
+        prazo,
+        dataRetorno: dtRet.toISOString().split('T')[0],
+        dataAtendimento: dataAtend,
+        formaPagamento: pgto,
+        statusPagamento: statusPgto === 'recebido' && !isParcial ? 'recebido' : 'parcial',
+        valorPago: valorPago > 0 ? (valorPago / realizados.length).toFixed(2) : null,
+        valorPendente: valorPendente > 0 ? (valorPendente / realizados.length).toFixed(2) : null,
+        planoId: planoId
+      };
+    });
+
+    const tratsAntigos = (pacAtual.tratamentos_adicionais || []).filter(t => t.dataAtendimento !== dataAtend);
+    const verificacaoData = verDias > 0 ? verData : null;
+
+    const atsAntigos = pacAtual.atendimentos || [];
+    const atsAtualizados = [...atsAntigos.filter(a => a.data !== dataAtend), {
+      data: dataAtend,
+      trats: realizados.map(r => ({ nome: r.trat, valor: r.val })),
+      valor: totalReal,
+      formaPagamento: pgto,
+      statusPagamento: statusPgto,
+      valorPago,
+      valorPendente,
+      verificacaoData,
+      planoId
+    }];
+
+    // Criar lembrete de cobrança se parcial
+    let lembretes = pacAtual.lembretes || [];
+    if (valorPendente > 0 && lembrData) {
+      // Remover lembretes antigos de cobrança do mesmo plano
+      lembretes = lembretes.filter(l => l.planoId !== planoId);
+      lembretes.push({
+        id: Date.now().toString(),
+        tipo: 'cobranca',
+        recado: `💰 Cobrar restante: ${fmtBRL(valorPendente)} — ${realizados.map(r=>r.trat).join(' + ')} — ${pacSelecionada.nome}`,
+        data: lembrData,
+        planoId,
+        valorPendente
+      });
+    }
+
+    await db.from('pacientes').update({
+      tratamentos_adicionais: [...tratsAntigos, ...novosTrats],
+      atendimentos: atsAtualizados,
+      lembretes
+    }).eq('id', pacSelecionada.id);
+
+    // ── BAIXA DE ESTOQUE ──
+    const produtosUsados = getProdutosOrcamento();
+    if(produtosUsados.length > 0){
+      await baixarProdutosEstoque(produtosUsados, pacSelecionada.id, planoId);
+      // Marcar orçamento como baixado (preserva produtos para histórico, mas não restaura no próximo)
+      const{data:docOrc}=await db.from('documentos').select('id,dados').eq('paciente_id',pacSelecionada.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
+      if(docOrc&&docOrc[0]){
+        await db.from('documentos').update({dados:{...docOrc[0].dados,produtos_baixados:true}}).eq('id',docOrc[0].id);
+      }
+    }
+    limparProdutosOrc();
+
+    toast('Atendimento e lançamento financeiro registrados! ✓', 'verde');
+    
+    // Não recarregar do banco — apenas limpar produtos (já baixados)
+    limparProdutosOrc();
+    // Fechar modal
+    document.getElementById('modal-realizado').style.display = 'none';
+    document.getElementById('modal-parcial-check').checked = false;
+    document.getElementById('modal-parcial-box').style.display = 'none';
+
+  } catch(e) {
+    console.error('Erro ao confirmar:', e);
+    toast('Erro ao salvar. Verifique o console.', 'vermelho');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar e registrar'; }
+  }
+};
+
+// ── SOBRESCREVER salvarDoc para orçamento ──
+const _salvarDocOriginal = window.salvarDoc;
+window.salvarDoc = async function(tipo) {
+  if (tipo !== 'orcamento') {
+    return _salvarDocOriginal.apply(this, arguments);
+  }
+
+  if (!pacSelecionada) { toast('Selecione um paciente primeiro!', 'vermelho'); return; }
+
+  const itens = [];
+  document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+    const trat = linha.querySelector('.orc-trat')?.value || '';
+    const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+    const itemId = linha.dataset.itemId;
+    if (trat) itens.push({ trat, val, itemId });
+  });
+
+  if (!itens.length) { toast('Adicione ao menos um tratamento', 'vermelho'); return; }
+
+  const validade = document.getElementById('orc-validade')?.value || null;
+  const condicoes = document.getElementById('orc-pagamento')?.value || null;
+  const obs = document.getElementById('orc-obs')?.value || null;
+
+  if (window._planoAtual?.id) {
+    // Atualizar plano existente
+    const descProcsUpd = itens.map(i => i.trat).join(' + ');
+    await db.from('planos_tratamento').update({ validade, condicoes_pagamento: condicoes, obs: descProcsUpd || obs, atualizado_em: new Date().toISOString() }).eq('id', window._planoAtual.id);
+
+    // Buscar itens existentes do plano para evitar duplicação
+    const { data: itensExist } = await db.from('plano_itens').select('id,procedimento,valor,status').eq('plano_id', window._planoAtual.id);
+    const usados = new Set(); // ids já vinculados nesta passagem
+
+    for (const item of itens) {
+      if (item.itemId) { usados.add(item.itemId); continue; }
+      // Antes de inserir, verificar se já existe item igual não vinculado (mesmo procedimento + valor)
+      const match = (itensExist||[]).find(ie =>
+        !usados.has(ie.id) &&
+        ie.procedimento === item.trat &&
+        Math.abs(parseFloat(ie.valor||0) - parseFloat(item.val||0)) < 0.01
+      );
+      if (match) { usados.add(match.id); continue; } // já existe — não duplica
+      const { data: novoItem } = await db.from('plano_itens').insert({
+        plano_id: window._planoAtual.id,
+        paciente_id: pacSelecionada.id,
+        procedimento: item.trat,
+        valor: item.val,
+        status: 'orcado'
+      }).select().single();
+      if (novoItem) usados.add(novoItem.id);
+    }
+    // Recarregar itens no estado
+    const { data: itensAtual } = await db.from('plano_itens').select('*').eq('plano_id', window._planoAtual.id);
+    window._planoAtual.itens = itensAtual || [];
+    toast('Plano de tratamento atualizado ✓', 'verde');
+  } else {
+    // Criar novo plano + itens
+    const descProcsOrc = itens.map(i => i.trat).join(' + ');
+    const { data: novoPlano } = await db.from('planos_tratamento').insert({
+      paciente_id: pacSelecionada.id,
+      status: 'ativo',
+      validade,
+      condicoes_pagamento: condicoes,
+      obs: descProcsOrc || obs
+    }).select().single();
+
+    await db.from('plano_itens').insert(
+      itens.map(i => ({ plano_id: novoPlano.id, paciente_id: pacSelecionada.id, procedimento: i.trat, valor: i.val, status: 'orcado' }))
+    );
+
+    // CRÍTICO: registrar o plano criado no estado global
+    // (sem isso, "Procedimento realizado" criava um SEGUNDO plano — duplicação!)
+    const { data: itensCriados } = await db.from('plano_itens').select('*').eq('plano_id', novoPlano.id);
+    window._planoAtual = { id: novoPlano.id, itens: itensCriados || [] };
+    // Vincular itemIds nas linhas da tela
+    document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+      const trat = linha.querySelector('.orc-trat')?.value || '';
+      const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+      if (!linha.dataset.itemId) {
+        const it = (itensCriados||[]).find(i => i.procedimento === trat && Math.abs(parseFloat(i.valor||0) - val) < 0.01 && !i._linked);
+        if (it) { linha.dataset.itemId = it.id; it._linked = true; }
+      }
+    });
+    toast('Plano de tratamento salvo ✓', 'verde');
+  }
+
+  // Também salvar na tabela documentos para histórico (com plano_id para exclusão em cascata)
+  await db.from('documentos').insert({
+    paciente_id: pacSelecionada.id,
+    tipo: 'orcamento',
+    dados: { plano_id: window._planoAtual?.id || null, itens: itens.map(i => ({ trat: i.trat, val: i.val })), pagamento: condicoes, obs, validade, produtos: getProdutosOrcamento() },
+    data_assinatura: HOJE
+  });
+
+  carregarDocsSalvos();
+  toast('Orçamento salvo ✓', 'verde');
+};
+
+console.log('✅ Patch Plano de Tratamento carregado');
+</script>
+
+</body>
+</html>
