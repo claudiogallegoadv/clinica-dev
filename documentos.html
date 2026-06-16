@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
-  <script src="config.js"></script>
-  <script>if(typeof authCheck==="function") authCheck();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Documentos — Clínica Dra. Anna Carolina Dias</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+try{
+  const auth=JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+  if(!auth.ok||auth.expires<Date.now()) window.location.replace('login.html');
+  else sessionStorage.setItem('clinica_auth','1');
+}catch(e){ window.location.replace('login.html'); }
+</script>
 <style>
 :root{
   --verde:#1D9E75;--verde-e:#0F6E56;--verde-c:#E1F5EE;
@@ -126,6 +132,10 @@ textarea{resize:vertical}
   #rece-cuidados label:has(input:checked) { display: flex !important; }
   /* Esconder botões de remover */
   #rece-produtos button, #rec-medicamentos button { display: none !important; }
+  /* Anamnese — imprimir só perguntas respondidas (Sim ou Não), ocultar "—" não respondidas */
+  .resp-row:has(input[value="naoresp"]:checked) { display: none !important; }
+  /* Planejamento — seções de Toxina/Preenchimento já controladas via JS (display:none inline) */
+  #sec-toxina-wrap[style*="display: none"], #sec-preench-wrap[style*="display: none"] { display: none !important; }
   /* Evitar página em branco inicial */
   body > * { page-break-before: avoid; }
   .panel.active > .card { margin-top: 0 !important; }
@@ -192,15 +202,24 @@ textarea{resize:vertical}
         <div class="fgr"><label>RG</label><input type="text" id="an-rg"/></div>
         <div class="fgr"><label>CPF</label><input type="text" id="an-cpf"/></div>
         <div class="fgr"><label>Sexo</label>
-          <select id="an-sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select>
+          <select id="an-sexo" onchange="toggleSecaoFeminina()"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select>
         </div>
       </div>
 
-      <div class="sec-title">Histórico de Saúde</div>
-      <div id="an-perguntas-abertas"></div>
+      <div class="sec-title">Queixa Principal e Expectativa</div>
+      <div class="fg">
+        <div class="fgr full"><label>Queixa principal / motivo da consulta</label><textarea id="an-queixa" rows="2" placeholder="O que a paciente busca tratar ou melhorar..."></textarea></div>
+        <div class="fgr full"><label>Expectativa do paciente com o tratamento</label><textarea id="an-expectativa" rows="2" placeholder="O que a paciente espera alcançar..."></textarea></div>
+      </div>
 
-      <div class="sec-title">Informações Complementares</div>
-      <div class="check-grid" id="an-checks"></div>
+      <div class="sec-title">Sinais Vitais</div>
+      <div class="fg">
+        <div class="fgr"><label>Pressão Arterial</label><input type="text" id="an-pa" placeholder="Ex: 120/80 mmHg"/></div>
+        <div class="fgr"><label>Peso (kg)</label><input type="text" id="an-peso"/></div>
+        <div class="fgr"><label>Altura (cm)</label><input type="text" id="an-altura"/></div>
+      </div>
+
+      <div id="an-grupos"></div>
 
       <div class="sec-title">Anotações e Outras Perguntas</div>
       <textarea id="an-obs" rows="3" placeholder="Observações adicionais..."></textarea>
@@ -515,16 +534,20 @@ textarea{resize:vertical}
         <div class="fgr"><label>&nbsp;</label><input type="text" id="plan-outros2" placeholder="Procedimento adicional..."/></div>
         <div class="fgr full"><label>&nbsp;</label><input type="text" id="plan-outros3" placeholder="Procedimento adicional..."/></div>
       </div>
-      <div class="sec-title">Toxina Botulínica — Unidades por Região</div>
-      <div id="plan-regioes"></div>
-      <div class="fg" style="margin-top:1rem">
-        <div class="fgr"><label>Validade do produto</label><input type="text" id="plan-validade" placeholder="Ex: 12/2026"/></div>
-        <div class="fgr"><label>Número do lote</label><input type="text" id="plan-lote"/></div>
-        <div class="fgr"><label>Volume de diluição</label><input type="text" id="plan-diluicao" placeholder="Ex: 2,5ml"/></div>
+      <div id="sec-toxina-wrap">
+        <div class="sec-title">Toxina Botulínica — Unidades por Região</div>
+        <div id="plan-regioes"></div>
+        <div class="fg" style="margin-top:1rem">
+          <div class="fgr"><label>Validade do produto</label><input type="text" id="plan-validade" placeholder="Ex: 12/2026"/></div>
+          <div class="fgr"><label>Número do lote</label><input type="text" id="plan-lote"/></div>
+          <div class="fgr"><label>Volume de diluição</label><input type="text" id="plan-diluicao" placeholder="Ex: 2,5ml"/></div>
+        </div>
       </div>
-      <div class="sec-title">Preenchimentos — Região / Volume / Produto</div>
-      <div id="plan-preench"></div>
-      <button class="btn" style="margin-top:8px" onclick="addLinhaPreench()">+ Adicionar linha</button>
+      <div id="sec-preench-wrap">
+        <div class="sec-title">Preenchimentos — Região / Volume / Produto</div>
+        <div id="plan-preench"></div>
+        <button class="btn no-print" style="margin-top:8px" onclick="addLinhaPreench()">+ Adicionar linha</button>
+      </div>
       <div class="sec-title">Espaço para Etiquetas e/ou Anotações</div>
       <textarea id="plan-anotacoes" rows="4" placeholder="Etiquetas dos produtos, lotes, observações..."></textarea>
       <div class="br no-print">
@@ -603,7 +626,6 @@ textarea{resize:vertical}
         <div class="fgr"><label>Endereço</label><input type="text" id="ao-end"/></div>
         <div class="fgr"><label>Responsável</label><input type="text" id="ao-resp"/></div>
       </div>
-      <div class="sec-title">Histórico Médico</div>
       <div class="sec-title">Histórico Clínico</div>
       <div style="overflow-x:auto;margin-bottom:1rem">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -966,18 +988,58 @@ function addProdutoEstetico(dados){
 }
 
 // ── ANAMNESE ──
-const AN_PERGUNTAS=[
-  {id:'trat-estetico',label:'Já fez algum tipo de tratamento estético?',qual:true},
-  {id:'medicamento',label:'Faz uso de algum medicamento?',qual:true},
-  {id:'alergia',label:'Tem alguma alergia (medicamentos, anestesia, etc)?',qual:true},
-  {id:'acidos',label:'Usa ou já usou ácidos na pele?',qual:true},
-  {id:'cuidado-diario',label:'Faz algum tipo de cuidado diário estético facial ou corporal?',qual:true},
-  {id:'trat-medico',label:'Está sob algum tipo de tratamento médico?',qual:true},
-  {id:'cirurgia',label:'Já fez alguma cirurgia ou procedimento de harmonização?',qual:true},
-  {id:'patologia-derm',label:'Alguma patologia dermatológica?',qual:true},
-  {id:'alteracao-vasc',label:'Tem alguma alteração vascular? (petéquias, cianose, eritema, etc)',qual:true},
+const AN_GRUPOS=[
+  {titulo:'Histórico de Saúde',perguntas:[
+    {id:'trat-estetico',label:'Já fez algum tipo de tratamento estético?',qual:true},
+    {id:'medicamento',label:'Faz uso de algum medicamento?',qual:true},
+    {id:'alergia',label:'Tem alguma alergia (medicamentos, anestesia, etc)?',qual:true},
+    {id:'acidos',label:'Usa ou já usou ácidos na pele?',qual:true},
+    {id:'cuidado-diario',label:'Faz algum tipo de cuidado diário estético facial ou corporal?',qual:true},
+    {id:'trat-medico',label:'Está sob algum tipo de tratamento médico?',qual:true},
+    {id:'cirurgia',label:'Já fez alguma cirurgia ou procedimento de harmonização?',qual:true},
+    {id:'patologia-derm',label:'Alguma patologia dermatológica?',qual:true},
+    {id:'alteracao-vasc',label:'Tem alguma alteração vascular? (petéquias, cianose, eritema, etc)',qual:true},
+  ]},
+  {titulo:'Saúde Geral',perguntas:[
+    {id:'alergia-ovo',label:'Possui alergia a ovo?',legacyIdx:1},
+    {id:'alergia-abelha',label:'Possui alergia a picada de abelha?',legacyIdx:2},
+    {id:'herpes',label:'Já teve ou tem herpes?',legacyIdx:3},
+    {id:'protese',label:'Tem alguma prótese?',qual:true,legacyIdx:12},
+    {id:'hematoma-facil',label:'Tem hematomas com facilidade?',legacyIdx:14},
+    {id:'varizes',label:'Tem varizes e/ou varicose?',legacyIdx:15},
+    {id:'doenca-infecto',label:'Tem alguma doença infectocontagiosa?',qual:true,legacyIdx:18},
+    {id:'doenca-orgao',label:'Tem alguma doença nos órgãos essenciais?',qual:true,legacyIdx:19},
+    {id:'desmaio-convulsao',label:'Já sofreu algum desmaio ou convulsão?',legacyIdx:20},
+    {id:'trauma-facial',label:'Já sofreu algum trauma na face?',qual:true,legacyIdx:21},
+    {id:'doenca-cardio',label:'Tem alguma doença cardiovascular?',qual:true,legacyIdx:22},
+    {id:'disturbio-resp',label:'Tem ou já teve algum distúrbio respiratório?',qual:true,legacyIdx:23},
+    {id:'peso-mudanca',label:'Perdeu ou ganhou peso ultimamente?',qual:true,legacyIdx:25},
+    {id:'diabetes',label:'Tem diabetes?',legacyIdx:26},
+    {id:'roacutan',label:'Faz uso de roacutan?',legacyIdx:27},
+  ]},
+  {titulo:'Hábitos e Estilo de Vida',perguntas:[
+    {id:'fumante',label:'É ou já foi fumante?',legacyIdx:4},
+    {id:'exposicao-sol',label:'Possui muita exposição ao sol?',legacyIdx:5},
+    {id:'exercicio',label:'Pratica algum exercício físico?',legacyIdx:7},
+    {id:'alimentacao-bal',label:'Tem uma alimentação balanceada?',legacyIdx:8},
+    {id:'alcool',label:'Faz uso de bebida alcoólica com frequência?',legacyIdx:24},
+  ]},
+  {titulo:'Pele e Estética',perguntas:[
+    {id:'manchas-pele',label:'Possui manchas na pele?',qual:true,legacyIdx:16},
+    {id:'formacao-pele',label:'Tem alguma formação sólida na pele?',qual:true,legacyIdx:17},
+    {id:'acne-hereditaria',label:'Hereditariedade de acne?',legacyIdx:13},
+    {id:'queloide',label:'Possui predisposição para queloides?',legacyIdx:28},
+  ]},
+  {titulo:'Saúde da Mulher',wrapId:'grupo-saude-mulher',perguntas:[
+    {id:'lactante',label:'É lactante?',legacyIdx:0},
+    {id:'gestante',label:'É gestante?',legacyIdx:6},
+    {id:'anticoncepcional',label:'Usa método anticoncepcional?',qual:true,legacyIdx:9},
+    {id:'ciclo-regular',label:'Ciclo menstrual regular?',legacyIdx:10},
+    {id:'reposicao-hormonal',label:'Faz reposição hormonal?',qual:true,legacyIdx:11},
+  ]},
 ];
-const AN_CHECKS=[
+// Mapeamento legado (formato antigo de checkbox, usado só para carregar anamneses salvas antes desta atualização)
+const AN_CHECKS_LEGADO=[
   'É lactante?','Possui alergia a ovo?','Possui alergia a picada de abelha?',
   'Já teve ou tem herpes?','É ou já foi fumante?','Possui muita exposição ao sol?',
   'É gestante?','Pratica algum exercício físico?','Tem uma alimentação balanceada?',
@@ -990,6 +1052,14 @@ const AN_CHECKS=[
   'Faz uso de bebida alcoólica com frequência?','Perdeu ou ganhou peso ultimamente?',
   'Tem diabetes?','Faz uso de roacutan?','Possui predisposição para queloides?',
 ];
+// Lista plana de todas as perguntas (usada para salvar/carregar)
+function anTodasPerguntas(){ return AN_GRUPOS.flatMap(g=>g.perguntas); }
+
+function toggleSecaoFeminina(){
+  const sexo=document.getElementById('an-sexo')?.value;
+  const wrap=document.getElementById('grupo-saude-mulher');
+  if(wrap) wrap.style.display=(sexo==='Masculino')?'none':'';
+}
 
 function abrirAnamnese(){
   const p=pacSelecionada;
@@ -999,27 +1069,33 @@ function abrirAnamnese(){
   if(p.rg) document.getElementById('an-rg').value=p.rg;
   if(p.cpf) document.getElementById('an-cpf').value=p.cpf;
   if(p.sexo) document.getElementById('an-sexo').value=p.sexo;
-  // Perguntas abertas
-  document.getElementById('an-perguntas-abertas').innerHTML=AN_PERGUNTAS.map(q=>`
-    <div class="resp-row">
-      <span class="resp-label">${q.label}</span>
-      <div class="resp-opts">
-        <label><input type="radio" name="${q.id}" value="sim"> Sim</label>
-        <label><input type="radio" name="${q.id}" value="nao" checked> Não</label>
-        ${q.qual?`<input type="text" class="qual-input" id="qual-${q.id}" placeholder="Qual?" style="display:none" oninput="this.style.display='block'">`:'' }
-      </div>
+  // Renderizar grupos
+  document.getElementById('an-grupos').innerHTML=AN_GRUPOS.map(g=>`
+    <div${g.wrapId?` id="${g.wrapId}"`:''}>
+      <div class="sec-title">${g.titulo}</div>
+      ${g.perguntas.map(q=>`
+        <div class="resp-row" id="row-${q.id}">
+          <span class="resp-label">${q.label}</span>
+          <div class="resp-opts">
+            <label><input type="radio" name="${q.id}" value="sim" onchange="anAtualizaQual('${q.id}')"> Sim</label>
+            <label><input type="radio" name="${q.id}" value="nao" onchange="anAtualizaQual('${q.id}')"> Não</label>
+            <label><input type="radio" name="${q.id}" value="naoresp" checked onchange="anAtualizaQual('${q.id}')"> —</label>
+            ${q.qual?`<input type="text" class="qual-input" id="qual-${q.id}" placeholder="Qual?" style="display:none">`:''}
+          </div>
+        </div>`).join('')}
     </div>`).join('');
-  AN_PERGUNTAS.forEach(q=>{
-    document.querySelectorAll(`input[name="${q.id}"]`).forEach(r=>r.addEventListener('change',()=>{
-      const qi=document.getElementById('qual-'+q.id);
-      if(qi)qi.style.display=r.value==='sim'?'block':'none';
-    }));
-  });
-  // Checks
-  document.getElementById('an-checks').innerHTML=AN_CHECKS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="anck-${i}"><label for="anck-${i}">${c}</label></div>`).join('');
+  toggleSecaoFeminina();
   iniciarSig('sig-an-pac');iniciarSig('sig-an-pro');
   limparSig('sig-an-pac');limparSig('sig-an-pro');
 }
+
+function anAtualizaQual(id){
+  const qi=document.getElementById('qual-'+id);
+  if(!qi) return;
+  const v=document.querySelector(`input[name="${id}"]:checked`)?.value;
+  qi.style.display=v==='sim'?'block':'none';
+}
+
 
 // ── TERMOS DE CONSENTIMENTO ──
 const TERMOS={
@@ -1255,19 +1331,22 @@ async function salvarDoc(tipo){
   let dados={};
   if(tipo==='anamnese'){
     dados.respostas={};
-    AN_PERGUNTAS.forEach(q=>{
-      let v='nao';
+    anTodasPerguntas().forEach(q=>{
+      let v='naoresp';
       document.querySelectorAll(`input[name="${q.id}"]`).forEach(r=>{ if(r.checked) v=r.value; });
       const qual=document.getElementById('qual-'+q.id)?.value||'';
       dados.respostas[q.id]={v,qual};
     });
-    dados.checks={};
-    AN_CHECKS.forEach((_,i)=>{dados.checks[i]=document.getElementById('anck-'+i)?.checked||false;});
     dados.obs=document.getElementById('an-obs')?.value||'';
     dados.endereco=document.getElementById('an-endereco')?.value||'';
     dados.cpf=document.getElementById('an-cpf')?.value||'';
     dados.rg=document.getElementById('an-rg')?.value||'';
     dados.sexo=document.getElementById('an-sexo')?.value||'';
+    dados.queixa=document.getElementById('an-queixa')?.value||'';
+    dados.expectativa=document.getElementById('an-expectativa')?.value||'';
+    dados.pa=document.getElementById('an-pa')?.value||'';
+    dados.peso=document.getElementById('an-peso')?.value||'';
+    dados.altura=document.getElementById('an-altura')?.value||'';
   } else if(tipo==='orcamento'){
     dados.itens=getOrcItens();
     dados.pagamento=document.getElementById('orc-pagamento')?.value||'';
@@ -1603,13 +1682,28 @@ function restaurarSig(id,dataUrl){
 const PLAN_PROCS=['Toxina Botulínica','Preenchimento Facial','Preenchimento Labial','Bioestimuladores','Fios de Sustentação','Rinomodelação','Skinbooster','Microagulhamento','Peeling Químico','Bichectomia','Lipo de papada','Harmonização do sorriso'];
 const PLAN_REGIOES=['Frontal','Corrugador','Prócero','Orbicular do olho','Mentual','Levantador do lábio superior','Depressor do septo nasal','Depressor do ângulo da boca','Platisma','Masseter','Outras'];
 
+function toggleSecoesPlan(){
+  // Toxina: aparece se o checkbox "Toxina Botulínica" está marcado OU alguma região tem unidades preenchidas
+  const toxMarcado=document.getElementById('plck-0')?.checked;
+  const toxComUnidades=Array.from(document.querySelectorAll('#plan-regioes input')).some(i=>i.value);
+  const secTox=document.getElementById('sec-toxina-wrap');
+  if(secTox) secTox.style.display=(toxMarcado||toxComUnidades)?'':'none';
+
+  // Preenchimento: aparece se "Preenchimento Facial" ou "Preenchimento Labial" marcados, ou alguma linha preenchida
+  const preMarcado=document.getElementById('plck-1')?.checked||document.getElementById('plck-2')?.checked;
+  const preComLinha=Array.from(document.querySelectorAll('#plan-preench > div')).some(div=>Array.from(div.querySelectorAll('input')).some(i=>i.value));
+  const secPre=document.getElementById('sec-preench-wrap');
+  if(secPre) secPre.style.display=(preMarcado||preComLinha)?'':'none';
+}
+
 async function abrirPlanejamento(){
   const p=pacSelecionada;
   document.getElementById('plan-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
-  document.getElementById('plan-procs').innerHTML=PLAN_PROCS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="plck-${i}"><label for="plck-${i}">${c}</label></div>`).join('');
-  document.getElementById('plan-regioes').innerHTML=PLAN_REGIOES.map((r,i)=>`<div style="display:grid;grid-template-columns:140px 80px;gap:8px;align-items:center;margin-bottom:6px"><label style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--txt)">${r}</label><input type="number" id="plan-reg-${i}" placeholder="U" min="0" style="padding:5px 8px;font-size:13px"/></div>`).join('');
+  document.getElementById('plan-procs').innerHTML=PLAN_PROCS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="plck-${i}" onchange="toggleSecoesPlan()"><label for="plck-${i}">${c}</label></div>`).join('');
+  document.getElementById('plan-regioes').innerHTML=PLAN_REGIOES.map((r,i)=>`<div style="display:grid;grid-template-columns:140px 80px;gap:8px;align-items:center;margin-bottom:6px"><label style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--txt)">${r}</label><input type="number" id="plan-reg-${i}" placeholder="U" min="0" style="padding:5px 8px;font-size:13px" oninput="toggleSecoesPlan()"/></div>`).join('');
   document.getElementById('plan-preench').innerHTML='';
   for(let i=0;i<4;i++) addLinhaPreench();
+  toggleSecoesPlan();
 
   // Carregar último planejamento salvo automaticamente
   const {data:docs} = await db.from('documentos').select('*')
@@ -1660,16 +1754,17 @@ async function abrirPlanejamento(){
       for(let i=atual;i<4;i++) addLinhaPreench();
     }
   }
+  toggleSecoesPlan();
 }
 
 function addLinhaPreench(){
   const el=document.getElementById('plan-preench');
   const d=document.createElement('div');
   d.style.cssText='display:grid;grid-template-columns:1fr 80px 1fr 30px;gap:6px;margin-bottom:6px;align-items:center';
-  d.innerHTML=`<input type="text" placeholder="Região..." style="font-size:13px;padding:6px 8px"/>
-    <input type="text" placeholder="Volume" style="font-size:13px;padding:6px 8px"/>
-    <input type="text" placeholder="Produto..." style="font-size:13px;padding:6px 8px"/>
-    <button class="btn dan" style="padding:5px 8px" onclick="this.parentElement.remove()">✕</button>`;
+  d.innerHTML=`<input type="text" placeholder="Região..." style="font-size:13px;padding:6px 8px" oninput="toggleSecoesPlan()"/>
+    <input type="text" placeholder="Volume" style="font-size:13px;padding:6px 8px" oninput="toggleSecoesPlan()"/>
+    <input type="text" placeholder="Produto..." style="font-size:13px;padding:6px 8px" oninput="toggleSecoesPlan()"/>
+    <button class="btn dan no-print" style="padding:5px 8px" onclick="this.parentElement.remove();toggleSecoesPlan()">✕</button>`;
   el.appendChild(d);
 }
 
@@ -2369,19 +2464,31 @@ function preencherDocSalvo(tipo, dados) {
       if (dados.endereco) setVal('an-endereco', dados.endereco);
       if (dados.cpf)      setVal('an-cpf', dados.cpf);
       if (dados.rg)       setVal('an-rg', dados.rg);
-      if (dados.sexo)     setVal('an-sexo', dados.sexo);
+      if (dados.sexo)     { setVal('an-sexo', dados.sexo); toggleSecaoFeminina(); }
       if (dados.obs)      setVal('an-obs', dados.obs);
+      if (dados.queixa)      setVal('an-queixa', dados.queixa);
+      if (dados.expectativa) setVal('an-expectativa', dados.expectativa);
+      if (dados.pa)          setVal('an-pa', dados.pa);
+      if (dados.peso)        setVal('an-peso', dados.peso);
+      if (dados.altura)      setVal('an-altura', dados.altura);
       if (dados.respostas) {
         Object.entries(dados.respostas).forEach(([id, r]) => {
           const radio = document.querySelector(`input[name="${id}"][value="${r.v}"]`);
-          if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+          if (radio) radio.checked = true;
+          anAtualizaQual(id);
           if (r.qual) setVal('qual-' + id, r.qual);
         });
       }
+      // Compatibilidade com anamneses salvas no formato antigo (checkbox por índice)
       if (dados.checks) {
-        Object.entries(dados.checks).forEach(([i, v]) => {
-          const el = document.getElementById('anck-' + i);
-          if (el) el.checked = v;
+        anTodasPerguntas().forEach(q=>{
+          if(q.legacyIdx===undefined) return;
+          const marcado = dados.checks[q.legacyIdx];
+          if(marcado===undefined) return;
+          const valor = marcado ? 'sim' : 'nao';
+          const radio = document.querySelector(`input[name="${q.id}"][value="${valor}"]`);
+          if (radio) radio.checked = true;
+          anAtualizaQual(q.id);
         });
       }
     } else if (tipo === 'orcamento') {
