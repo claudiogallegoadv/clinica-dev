@@ -167,7 +167,7 @@ textarea{resize:vertical}
   <!-- DOCUMENTOS DISPONÍVEIS -->
   <div id="sec-docs" style="display:none">
     <div class="doc-grid">
-      <div class="doc-card" onclick="abrirDoc('anamnese')"><div class="doc-icon">📋</div><div class="doc-titulo">Ficha de Anamnese</div><div class="doc-sub">Avançada</div></div>
+      <div class="doc-card" onclick="abrirDoc('anamnese')"><div class="doc-icon">📋</div><div class="doc-titulo">Ficha de Anamnese</div><div class="doc-sub">Completa</div></div>
       <div class="doc-card" onclick="abrirDoc('termo-botox')"><div class="doc-icon">💉</div><div class="doc-titulo">Termo de Consentimento</div><div class="doc-sub">Toxina Botulínica</div></div>
       <div class="doc-card" onclick="abrirDoc('termo-preenchimento')"><div class="doc-icon">💉</div><div class="doc-titulo">Termo de Consentimento</div><div class="doc-sub">Preenchimento Facial</div></div>
       <div class="doc-card" onclick="abrirDoc('termo-bioestimulador')"><div class="doc-icon">💉</div><div class="doc-titulo">Termo de Consentimento</div><div class="doc-sub">Bioestimuladores</div></div>
@@ -175,7 +175,6 @@ textarea{resize:vertical}
       <div class="doc-card" onclick="abrirDoc('orcamento')"><div class="doc-icon">💰</div><div class="doc-titulo">Ficha de Orçamento</div><div class="doc-sub">Tratamentos</div></div>
       <div class="doc-card" onclick="abrirDoc('planejamento')"><div class="doc-icon">📐</div><div class="doc-titulo">Planejamento</div><div class="doc-sub">Procedimentos Faciais</div></div>
       <div class="doc-card" onclick="abrirDoc('odontograma')"><div class="doc-icon">🦷</div><div class="doc-titulo">Ficha Clínica</div><div class="doc-sub">Odontograma</div></div>
-      <div class="doc-card" onclick="abrirDoc('anamnese-odonto')"><div class="doc-icon">📝</div><div class="doc-titulo">Anamnese</div><div class="doc-sub">Odontológica</div></div>
       <div class="doc-card" onclick="abrirDoc('receituario')"><div class="doc-icon">💊</div><div class="doc-titulo">Receituário</div><div class="doc-sub">Médico</div></div>
       <div class="doc-card" onclick="abrirDoc('receituario-estetico')"><div class="doc-icon">✨</div><div class="doc-titulo">Receituário</div><div class="doc-sub">Produtos Estéticos</div></div>
     </div>
@@ -996,7 +995,7 @@ const AN_GRUPOS=[
     {id:'acidos',label:'Usa ou já usou ácidos na pele?',qual:true},
     {id:'cuidado-diario',label:'Faz algum tipo de cuidado diário estético facial ou corporal?',qual:true},
     {id:'trat-medico',label:'Está sob algum tipo de tratamento médico?',qual:true},
-    {id:'cirurgia',label:'Já fez alguma cirurgia ou procedimento de harmonização?',qual:true},
+    {id:'cirurgia',label:'Já fez alguma cirurgia (estética, odontológica ou outra)?',qual:true},
     {id:'patologia-derm',label:'Alguma patologia dermatológica?',qual:true},
     {id:'alteracao-vasc',label:'Tem alguma alteração vascular? (petéquias, cianose, eritema, etc)',qual:true},
   ]},
@@ -1032,10 +1031,33 @@ const AN_GRUPOS=[
   ]},
   {titulo:'Saúde da Mulher',wrapId:'grupo-saude-mulher',perguntas:[
     {id:'lactante',label:'É lactante?',legacyIdx:0},
-    {id:'gestante',label:'É gestante?',legacyIdx:6},
+    {id:'gestante',label:'É gestante?',qual:true,qualPlaceholder:'Quantos meses?',legacyIdx:6},
     {id:'anticoncepcional',label:'Usa método anticoncepcional?',qual:true,legacyIdx:9},
     {id:'ciclo-regular',label:'Ciclo menstrual regular?',legacyIdx:10},
     {id:'reposicao-hormonal',label:'Faz reposição hormonal?',qual:true,legacyIdx:11},
+  ]},
+  {titulo:'Saúde Odontológica',perguntas:[
+    {id:'circulatorio',label:'Já teve algum problema circulatório?',qual:true},
+    {id:'reumatismo',label:'Sofreu de reumatismo infeccioso?'},
+    {id:'dor-peito-costas',label:'Sente dores no peito ou nas costas?'},
+    {id:'cansaco-esforco',label:'Sente-se cansado ao fazer qualquer esforço?'},
+    {id:'hipertensao',label:'É hipertenso?'},
+    {id:'doenca-renal',label:'Tem ou teve doença renal?',qual:true},
+    {id:'doenca-sangue',label:'Já teve alguma doença no sangue?',qual:true},
+    {id:'sangramento-excessivo',label:'Sangra excessivamente quando se machuca?'},
+    {id:'reacao-anestesia',label:'Já tomou anestesia local? Teve alguma reação?',qual:true},
+    {id:'extracao-dental',label:'Já extraiu algum dente?'},
+    {id:'teste-hiv-hep',label:'Já fez teste para HIV ou Hepatite?',qual:true},
+  ]},
+  {titulo:'Saúde Bucal',extra:'<div class="fgr" style="margin-bottom:.75rem"><label>Quantas vezes escova os dentes por dia?</label><input type="text" id="an-escovacao-freq" placeholder="Ex: 2 vezes ao dia" style="max-width:220px"/></div>',perguntas:[
+    {id:'respirador-bucal',label:'É respirador bucal?'},
+    {id:'mau-halito',label:'Sente mau hálito?'},
+    {id:'dor-facial-muscular',label:'Tem dor facial ou muscular?'},
+    {id:'dor-atm',label:'Sente dor na ATM (articulação da mandíbula)?'},
+    {id:'estalo-atm',label:'Tem estalos ou ruídos na ATM?'},
+    {id:'sangramento-gengival',label:'Sua gengiva sangra com facilidade?'},
+    {id:'usa-fio-dental',label:'Usa fio dental?'},
+    {id:'bochecho-antisseptico',label:'Faz bochecho com soluções anti-séptica?'},
   ]},
 ];
 // Mapeamento legado (formato antigo de checkbox, usado só para carregar anamneses salvas antes desta atualização)
@@ -1073,6 +1095,7 @@ function abrirAnamnese(){
   document.getElementById('an-grupos').innerHTML=AN_GRUPOS.map(g=>`
     <div${g.wrapId?` id="${g.wrapId}"`:''}>
       <div class="sec-title">${g.titulo}</div>
+      ${g.extra||''}
       ${g.perguntas.map(q=>`
         <div class="resp-row" id="row-${q.id}">
           <span class="resp-label">${q.label}</span>
@@ -1080,7 +1103,7 @@ function abrirAnamnese(){
             <label><input type="radio" name="${q.id}" value="sim" onchange="anAtualizaQual('${q.id}')"> Sim</label>
             <label><input type="radio" name="${q.id}" value="nao" onchange="anAtualizaQual('${q.id}')"> Não</label>
             <label><input type="radio" name="${q.id}" value="naoresp" checked onchange="anAtualizaQual('${q.id}')"> —</label>
-            ${q.qual?`<input type="text" class="qual-input" id="qual-${q.id}" placeholder="Qual?" style="display:none">`:''}
+            ${q.qual?`<input type="text" class="qual-input" id="qual-${q.id}" placeholder="${q.qualPlaceholder||'Qual?'}" style="display:none">`:''}
           </div>
         </div>`).join('')}
     </div>`).join('');
@@ -1347,6 +1370,7 @@ async function salvarDoc(tipo){
     dados.pa=document.getElementById('an-pa')?.value||'';
     dados.peso=document.getElementById('an-peso')?.value||'';
     dados.altura=document.getElementById('an-altura')?.value||'';
+    dados.escovacaoFreq=document.getElementById('an-escovacao-freq')?.value||'';
   } else if(tipo==='orcamento'){
     dados.itens=getOrcItens();
     dados.pagamento=document.getElementById('orc-pagamento')?.value||'';
@@ -2471,6 +2495,7 @@ function preencherDocSalvo(tipo, dados) {
       if (dados.pa)          setVal('an-pa', dados.pa);
       if (dados.peso)        setVal('an-peso', dados.peso);
       if (dados.altura)      setVal('an-altura', dados.altura);
+      if (dados.escovacaoFreq) setVal('an-escovacao-freq', dados.escovacaoFreq);
       if (dados.respostas) {
         Object.entries(dados.respostas).forEach(([id, r]) => {
           const radio = document.querySelector(`input[name="${id}"][value="${r.v}"]`);
