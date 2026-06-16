@@ -136,6 +136,8 @@ textarea{resize:vertical}
   #rece-produtos button, #rec-medicamentos button { display: none !important; }
   /* Anamnese — imprimir só perguntas respondidas (Sim ou Não), ocultar "—" não respondidas */
   .resp-row:has(input[value="naoresp"]:checked) { display: none !important; }
+  /* Esconder o título do grupo (e o campo extra, se houver) quando nenhuma pergunta do grupo foi respondida */
+  #an-grupos > div:not(:has(.resp-row:not(:has(input[value="naoresp"]:checked)))) { display: none !important; }
   /* Planejamento — seções de Toxina/Preenchimento já controladas via JS (display:none inline) */
   #sec-toxina-wrap[style*="display: none"], #sec-preench-wrap[style*="display: none"] { display: none !important; }
   /* Evitar página em branco inicial */
@@ -1534,25 +1536,7 @@ async function verDoc(id,tipo){
     if(d.cpf) document.getElementById('img-cpf').value=d.cpf;
 
   } else if(tipo==='anamnese'){
-    if(d.endereco) document.getElementById('an-endereco').value=d.endereco;
-    if(d.cpf) document.getElementById('an-cpf').value=d.cpf;
-    if(d.rg) document.getElementById('an-rg').value=d.rg;
-    if(d.sexo) document.getElementById('an-sexo').value=d.sexo;
-    if(d.obs) document.getElementById('an-obs').value=d.obs;
-    if(d.respostas){
-      Object.entries(d.respostas).forEach(([qid,resp])=>{
-        const radio=document.querySelector(`input[name="${qid}"][value="${resp.v}"]`);
-        if(radio) radio.checked=true;
-        const qual=document.getElementById('qual-'+qid);
-        if(qual) qual.value=resp.qual||'';
-      });
-    }
-    if(d.checks){
-      Object.entries(d.checks).forEach(([i,v])=>{
-        const el=document.getElementById('anck-'+i);
-        if(el) el.checked=v;
-      });
-    }
+    preencherDocSalvo('anamnese', d);
 
   } else if(tipo.startsWith('termo-')){
     if(d.cpf) document.getElementById(`${tipo}-cpf`).value=d.cpf;
