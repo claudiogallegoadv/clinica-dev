@@ -1298,7 +1298,17 @@ function toggleCategoriaOrc(resetar){
   const cat=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
   const ehDente=cat==='Odontologia';
   const listaId=ehDente?'lista-trats-dente':'lista-trats-harmonizacao';
-  document.querySelectorAll('.orc-dente').forEach(el=>el.style.display=ehDente?'block':'none');
+  document.querySelectorAll('.orc-dente').forEach(el=>{
+    el.style.display=ehDente?'block':'none';
+    // Linhas em grade (addItemOrc) precisam reajustar as colunas, ou os campos
+    // vizinhos deslizam pra coluna errada quando o campo Dente é escondido
+    const linha=el.closest('.orc-linha');
+    if(linha && getComputedStyle(linha).display==='grid'){
+      linha.style.gridTemplateColumns = ehDente
+        ? '24px 60px 1fr 110px auto 32px'
+        : '24px 1fr 110px auto 32px';
+    }
+  });
   document.querySelectorAll('.orc-trat').forEach(el=>el.setAttribute('list',listaId));
   document.querySelectorAll('.orc-hist-dente-col').forEach(el=>el.style.display=ehDente?'':'none');
   const elPrint=document.getElementById('orc-categoria-print');
