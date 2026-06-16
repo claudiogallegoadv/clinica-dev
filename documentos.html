@@ -95,6 +95,10 @@ textarea{resize:vertical}
   body{background:white}
   .card{border:none;box-shadow:none;padding:0}
   .sig-area canvas{border:1px solid #ccc}
+  /* Força a impressão de cores de fundo (odontograma, legendas, destaques) independente
+     da opção "Gráficos em segundo plano" do navegador estar marcada ou não */
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  #orc-categoria-print{display:block!important}
 }
 @media(max-width:600px){
   .doc-grid{grid-template-columns:repeat(2,1fr)}
@@ -312,6 +316,16 @@ textarea{resize:vertical}
         <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">Ficha de Orçamento</div>
       </div>
       <div id="orc-pac-info" class="pac-info"></div>
+      <div class="sec-title">Tipo de Orçamento</div>
+      <div style="display:flex;gap:10px;margin-bottom:1rem" id="orc-categoria-sel" class="no-print">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--borda);border-radius:8px;cursor:pointer">
+          <input type="radio" name="orc-categoria" value="Harmonização Orofacial" checked onchange="toggleCategoriaOrc()"/> ✨ Harmonização Orofacial
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--borda);border-radius:8px;cursor:pointer">
+          <input type="radio" name="orc-categoria" value="Odontológico" onchange="toggleCategoriaOrc()"/> 🦷 Odontológico (Dente)
+        </label>
+      </div>
+      <div id="orc-categoria-print" style="font-size:13px;font-weight:600;color:var(--verde-e);margin-bottom:1rem;display:none"></div>
       <div class="sec-title">Tratamentos Sugeridos</div>
       <div id="orc-itens"></div>
       <button class="btn" style="margin-bottom:1rem" onclick="addItemOrc()">+ Adicionar tratamento</button>
@@ -328,13 +342,29 @@ textarea{resize:vertical}
       <!-- Versão de impressão dos produtos -->
       <div class="orc-print-produtos" id="orc-print-produtos"></div>
       <!-- FIM SEÇÃO PRODUTOS -->
+      <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Histórico de Atendimentos</span>
+        <button class="btn sm no-print" style="font-size:12px" onclick="atualizarHistoricoOrcDoAtendimento()">🔄 Atualizar do histórico do paciente</button>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:1rem">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="background:var(--verde-c)">
+            <th style="padding:8px;border:1px solid var(--borda);text-align:left;width:100px">Data</th>
+            <th class="orc-hist-dente-col" style="padding:8px;border:1px solid var(--borda);text-align:left;width:70px;display:none">Dente</th>
+            <th style="padding:8px;border:1px solid var(--borda);text-align:left">Procedimento realizado</th>
+            <th style="padding:8px;border:1px solid var(--borda);text-align:right;width:100px">Valor</th>
+          </tr></thead>
+          <tbody id="orc-historico"></tbody>
+        </table>
+        <button class="btn no-print" style="margin-top:6px" onclick="addLinhaHistoricoOrc()">+ Adicionar linha</button>
+      </div>
       <div class="sec-title">Condições de Pagamento</div>
       <textarea id="orc-pagamento" rows="3" placeholder="Ex: À vista com 10% de desconto. Parcelado em até 6x sem juros no cartão."></textarea>
       <div class="sec-title">Outras Informações</div>
       <textarea id="orc-obs" rows="3" placeholder="Observações importantes..."></textarea>
-      <div class="fgr" style="margin-top:1rem">
-        <label>Validade do Orçamento</label>
-        <input type="date" id="orc-validade"/>
+      <div class="fg" style="margin-top:1rem">
+        <div class="fgr"><label>Válido por (dias)</label><input type="number" id="orc-validade-dias" placeholder="Ex: 30" min="0" oninput="calcValidadeOrc()"/></div>
+        <div class="fgr"><label>Data de validade (calculada)</label><input type="date" id="orc-validade"/></div>
       </div>
       <!-- Rodapé de impressão -->
       <div class="orc-print-footer">
@@ -1212,6 +1242,10 @@ async function abrirOrcamento(){
   // Buscar último orçamento salvo para recuperar produtos
   const{data:docsSalvos}=await db.from('documentos').select('dados').eq('paciente_id',p.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
   const ultimoOrc=docsSalvos?.[0]?.dados||{};
+  // Restaurar categoria do último orçamento (ou Harmonização por padrão)
+  const radioCategoria=document.querySelector(`input[name="orc-categoria"][value="${ultimoOrc.categoria||'Harmonização Orofacial'}"]`);
+  if(radioCategoria) radioCategoria.checked=true;
+  document.getElementById('orc-validade-dias').value=ultimoOrc.validadeDias||'';
   if(plano){
     window._planoAtual={id:plano.id,itens:plano.plano_itens||[]};
     document.getElementById('orc-validade').value=plano.validade||ultimoOrc.validade||'';
@@ -1222,12 +1256,17 @@ async function abrirOrcamento(){
   } else {
     window._planoAtual=null;
     document.getElementById('orc-itens').innerHTML='';
-    document.getElementById('orc-validade').value=ultimoOrc.validade||HOJE;
+    // Validade não nasce mais preenchida com hoje — fica em branco até a Dra. escolher
+    // (evita orçamento "vencido" no mesmo dia em que foi criado)
+    document.getElementById('orc-validade').value=ultimoOrc.validade||'';
     document.getElementById('orc-pagamento').value=ultimoOrc.pagamento||'';
     document.getElementById('orc-obs').value='';
     addItemOrc();addItemOrc();addItemOrc();
     esconderBannerPlanoAtivo();
   }
+  toggleCategoriaOrc();
+  // Histórico de atendimentos: puxa automaticamente do que já foi registrado
+  await atualizarHistoricoOrcDoAtendimento(true);
   // Restaurar produtos do último orçamento salvo (apenas se não foram baixados)
   limparProdutosOrc();
   if(ultimoOrc.produtos&&ultimoOrc.produtos.length&&!ultimoOrc.produtos_baixados){
@@ -1240,19 +1279,37 @@ function addItemOrc(){
   const el=document.getElementById('orc-itens');
   const d=document.createElement('div');
   d.className='orc-linha';
-  d.style.cssText='display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center;margin-bottom:7px';
-  d.innerHTML=`<input type="text" class="orc-trat" list="lista-trats-orc" placeholder="Tratamento..."/>
-    <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01" oninput="calcTotal()" style="text-align:right"/>
-    <button class="btn dan" style="padding:6px 8px" onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>`;
+  d.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:7px';
+  d.innerHTML=`<input type="text" class="orc-dente" placeholder="Dente" style="width:64px;flex-shrink:0;display:none"/>
+    <input type="text" class="orc-trat" list="${listaTratsAtualOrc()}" placeholder="Tratamento..." style="flex:1"/>
+    <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01" oninput="calcTotal()" style="width:110px;text-align:right;flex-shrink:0"/>
+    <button class="btn dan" style="padding:6px 8px;flex-shrink:0" onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>`;
   el.appendChild(d);
+  toggleCategoriaOrc(false);
 }
 
-// Lista completa de tratamentos (igual ao cadastro)
-if(!document.getElementById('lista-trats-orc')){
+function listaTratsAtualOrc(){
+  const cat=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
+  return cat==='Odontológico'?'lista-trats-dente':'lista-trats-harmonizacao';
+}
+
+function toggleCategoriaOrc(resetar){
+  const cat=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
+  const ehDente=cat==='Odontológico';
+  const listaId=ehDente?'lista-trats-dente':'lista-trats-harmonizacao';
+  document.querySelectorAll('.orc-dente').forEach(el=>el.style.display=ehDente?'block':'none');
+  document.querySelectorAll('.orc-trat').forEach(el=>el.setAttribute('list',listaId));
+  document.querySelectorAll('.orc-hist-dente-col').forEach(el=>el.style.display=ehDente?'':'none');
+  const elPrint=document.getElementById('orc-categoria-print');
+  if(elPrint) elPrint.textContent=(ehDente?'🦷 ':'✨ ')+cat;
+}
+
+// Listas de tratamentos por categoria (sem divisores — divisores numa datalist
+// apareciam como opções clicáveis reais, podendo ser selecionadas por engano)
+if(!document.getElementById('lista-trats-harmonizacao')){
   const dl=document.createElement('datalist');
-  dl.id='lista-trats-orc';
+  dl.id='lista-trats-harmonizacao';
   [
-    '── Harmonização Orofacial ──',
     'Botox (toxina botulínica)','Botox para bruxismo (masseter)','Botox para sorriso gengival',
     'Preenchimento labial','Preenchimento de bigode chinês','Preenchimento de olheiras',
     'Preenchimento de mandíbula','Preenchimento de mento (queixo)','Preenchimento de têmporas',
@@ -1260,29 +1317,31 @@ if(!document.getElementById('lista-trats-orc')){
     'Enzima hialuronidase (dissolução)','Bichectomia','Rinomodelação',
     'Lifting com fios de PDO','Bioestimulador de colágeno','Skinbooster',
     'PRP / PRF (plasma rico em plaquetas)','Lipo de papada (Deoxicolato)',
-    '── Odontologia Estética ──',
+    'Consulta / avaliação','Outro'
+  ].forEach(t=>{
+    const op=document.createElement('option');op.value=t;dl.appendChild(op);
+  });
+  document.body.appendChild(dl);
+}
+if(!document.getElementById('lista-trats-dente')){
+  const dl=document.createElement('datalist');
+  dl.id='lista-trats-dente';
+  [
     'Harmonização do sorriso','Clareamento dental (consultório)','Clareamento dental (caseiro)',
     'Facetas de porcelana','Facetas de resina','Lentes de contato dental',
     'Design de sorriso','Restauração estética (resina)','Contorno gengival / Gengivoplastia',
     'Alongamento de coroa clínica','Micropigmentação labial','Fechamento de diastema (resina)',
-    '── Odontologia Geral ──',
     'Profilaxia (limpeza dental)','Raspagem e alisamento radicular','Aplicação de flúor',
     'Aplicação de selante','Consulta de manutenção','Radiografia (RX)',
     'Restauração (resina composta)','Restauração (amálgama)','Restauração de urgência',
-    '── Endodontia ──',
     'Tratamento de canal (unirradicular)','Tratamento de canal (birradicular)',
     'Tratamento de canal (multirradicular)','Retratamento de canal',
-    '── Implantes ──',
     'Implante dentário','Coroa sobre implante','Enxerto ósseo','Regeneração óssea guiada (ROG)',
-    '── Periodontia ──',
     'Tratamento periodontal','Cirurgia periodontal','Manutenção periodontal','Enxerto gengival',
-    '── Ortodontia ──',
     'Aparelho ortodôntico (metálico)','Aparelho ortodôntico (estético)',
     'Alinhador invisível','Manutenção ortodôntica','Contenção ortodôntica',
-    '── Cirurgia ──',
     'Extração simples','Extração de siso (terceiro molar)','Frenectomia',
     'Cirurgia ortognática','Osteotomia',
-    '── Outros ──',
     'Placa de bruxismo (esplinte)','Placa clareadora','Consulta / avaliação',
     'Urgência odontológica','Outro'
   ].forEach(t=>{
@@ -1300,11 +1359,61 @@ function calcTotal(){
 function getOrcItens(){
   const itens=[];
   document.querySelectorAll('#orc-itens .orc-linha').forEach(linha=>{
+    const dente=linha.querySelector('.orc-dente')?.value||'';
     const trat=linha.querySelector('.orc-trat')?.value||'';
     const val=parseFloat(linha.querySelector('.orc-val')?.value)||0;
-    if(trat||val) itens.push({trat,val});
+    if(trat||val) itens.push({trat,val,dente});
   });
   return itens;
+}
+
+// ── HISTÓRICO DE ATENDIMENTOS (Ficha de Orçamento) ──
+function addLinhaHistoricoOrc(){
+  const tb=document.getElementById('orc-historico');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="padding:6px;border:1px solid var(--borda)"><input type="date" style="width:100%;padding:4px;font-size:12px"/></td>
+    <td class="orc-hist-dente-col" style="padding:6px;border:1px solid var(--borda);display:none"><input type="text" placeholder="Dente" style="width:100%;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda)"><input type="text" placeholder="Procedimento..." style="width:100%;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda);text-align:right"><input type="number" min="0" step="0.01" placeholder="0,00" style="width:100%;padding:4px;font-size:12px;text-align:right"/></td>`;
+  tb.appendChild(tr);
+  toggleCategoriaOrc();
+}
+
+// Puxa o histórico já registrado em "✅ Procedimento realizado" (tabela pacientes.atendimentos)
+// silencioso=true: usado na abertura automática da ficha (não pede confirmação)
+async function atualizarHistoricoOrcDoAtendimento(silencioso){
+  if(!pacSelecionada) return;
+  if(!silencioso){
+    if(!confirm('Isso vai substituir as linhas atuais pelas registradas em "Procedimento realizado". Linhas digitadas manualmente e ainda não salvas serão perdidas. Continuar?')) return;
+  }
+  const {data:pac}=await db.from('pacientes').select('atendimentos').eq('id',pacSelecionada.id).single();
+  const atends=(pac?.atendimentos||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  document.getElementById('orc-historico').innerHTML='';
+  if(atends.length===0){
+    addLinhaHistoricoOrc();addLinhaHistoricoOrc();addLinhaHistoricoOrc();
+    return;
+  }
+  atends.forEach(at=>{
+    addLinhaHistoricoOrc();
+    const trs=document.querySelectorAll('#orc-historico tr');
+    const tr=trs[trs.length-1];
+    const inputs=tr.querySelectorAll('input');
+    const procedimento=(at.trats||[]).map(t=>t.nome).join(' + ');
+    if(inputs[0]) inputs[0].value=at.data||'';
+    if(inputs[2]) inputs[2].value=procedimento;
+    if(inputs[3]) inputs[3].value=at.valor||'';
+  });
+  if(!silencioso) toast('Histórico atualizado a partir dos atendimentos registrados ✓','verde');
+}
+
+// Calcula a data de validade a partir do número de dias informado (igual ao papel: "válido por X dias")
+function calcValidadeOrc(){
+  const dias=parseInt(document.getElementById('orc-validade-dias')?.value)||0;
+  const campoData=document.getElementById('orc-validade');
+  if(!dias){ return; }
+  const dt=new Date();
+  dt.setDate(dt.getDate()+dias);
+  campoData.value=dt.toISOString().split('T')[0];
 }
 
 // ── ASSINATURA DIGITAL ──
@@ -1380,6 +1489,11 @@ async function salvarDoc(tipo){
     dados.pagamento=document.getElementById('orc-pagamento')?.value||'';
     dados.obs=document.getElementById('orc-obs')?.value||'';
     dados.validade=document.getElementById('orc-validade')?.value||'';
+    dados.validadeDias=document.getElementById('orc-validade-dias')?.value||'';
+    dados.categoria=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
+    dados.historico=Array.from(document.querySelectorAll('#orc-historico tr')).map(tr=>
+      Array.from(tr.querySelectorAll('input')).map(i=>i.value)
+    ).filter(row=>row.some(v=>v));
     dados.produtos=getProdutosOrcamento();
   } else if(tipo==='autorizacao-imagem'){
     dados.rg=document.getElementById('img-rg')?.value||'';
@@ -1507,6 +1621,25 @@ async function verDoc(id,tipo){
     if(d.pagamento) document.getElementById('orc-pagamento').value=d.pagamento;
     if(d.obs) document.getElementById('orc-obs').value=d.obs;
     if(d.validade) document.getElementById('orc-validade').value=d.validade;
+    if(d.validadeDias) document.getElementById('orc-validade-dias').value=d.validadeDias;
+    if(d.categoria){
+      const radio=document.querySelector(`input[name="orc-categoria"][value="${d.categoria}"]`);
+      if(radio) radio.checked=true;
+    }
+    toggleCategoriaOrc();
+    // Histórico de atendimentos — carrega o que estava salvo neste documento
+    document.getElementById('orc-historico').innerHTML='';
+    if(d.historico&&d.historico.length>0){
+      d.historico.forEach(row=>{
+        addLinhaHistoricoOrc();
+        const trs=document.querySelectorAll('#orc-historico tr');
+        const tr=trs[trs.length-1];
+        const inputs=tr.querySelectorAll('input');
+        row.forEach((v,i)=>{if(inputs[i])inputs[i].value=v;});
+      });
+    } else {
+      await atualizarHistoricoOrcDoAtendimento(true);
+    }
     // Carregar produtos utilizados salvos
     limparProdutosOrc();
     if(d.produtos&&d.produtos.length){
@@ -1525,6 +1658,7 @@ async function verDoc(id,tipo){
           if(ultima){
             ultima.querySelector('.orc-trat').value=item.trat||'';
             ultima.querySelector('.orc-val').value=item.val||'';
+            if(ultima.querySelector('.orc-dente')) ultima.querySelector('.orc-dente').value=item.dente||'';
           }
         });
       }
@@ -2091,6 +2225,7 @@ function fecharModalRealizado(){
 async function confirmarRealizado(){
   const dataAtend=document.getElementById('modal-data').value;
   if(!dataAtend){toast('Informe a data do atendimento!','vermelho');return;}
+  const categoriaOrc=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
 
 const itens = window._modalRealizados || getOrcItens().filter(i=>i.trat);
 const selecionados = itens;
@@ -2151,14 +2286,14 @@ if(!selecionados.length){toast('Marque ao menos um tratamento!','vermelho');retu
       // Lançar entrada como pago
       await db.from('financeiro').insert({
         tipo:'receita', data:dataAtend, descricao:descFin+' (entrada)',
-        categoria:'Harmonização Orofacial', valor:entrada,
+        categoria:categoriaOrc, valor:entrada,
         forma_pagamento:pgto, status:'recebido', obs:obs||null
       });
       // Lançar restante como pendente
       await db.from('financeiro').insert({
         tipo:'receita', data:lembretaData||dataAtend,
         descricao:descFin+' (restante)',
-        categoria:'Harmonização Orofacial', valor:restante,
+        categoria:categoriaOrc, valor:restante,
         forma_pagamento:pgto, status:'pendente',
         obs:`Vencimento em ${lembreteDias} dias`
       });
@@ -2178,7 +2313,7 @@ if(!selecionados.length){toast('Marque ao menos um tratamento!','vermelho');retu
       // Pagamento normal
       const objFin={
         tipo:'receita', data:dataAtend, descricao:descFin,
-        categoria:'Harmonização Orofacial', valor:valorTotal,
+        categoria:categoriaOrc, valor:valorTotal,
         forma_pagamento:pgto, status, obs:obs||null
       };
       const{error:errFin}=await db.from('financeiro').insert(objFin);
@@ -2506,6 +2641,22 @@ function preencherDocSalvo(tipo, dados) {
       if (dados.pagamento) setVal('orc-pagamento', dados.pagamento);
       if (dados.obs)       setVal('orc-obs', dados.obs);
       if (dados.validade)  setVal('orc-validade', dados.validade);
+      if (dados.validadeDias) setVal('orc-validade-dias', dados.validadeDias);
+      if (dados.categoria) {
+        const radio = document.querySelector(`input[name="orc-categoria"][value="${dados.categoria}"]`);
+        if (radio) radio.checked = true;
+      }
+      toggleCategoriaOrc();
+      document.getElementById('orc-historico').innerHTML = '';
+      if (dados.historico && dados.historico.length > 0) {
+        dados.historico.forEach(row => {
+          addLinhaHistoricoOrc();
+          const trs = document.querySelectorAll('#orc-historico tr');
+          const tr = trs[trs.length - 1];
+          const inputs = tr.querySelectorAll('input');
+          row.forEach((v, i) => { if (inputs[i]) inputs[i].value = v; });
+        });
+      }
       // Só sobrescrever itens se NÃO há plano ativo
       if (!window._planoAtual?.id && dados.itens && dados.itens.length) {
         const cont = document.getElementById('orc-itens');
@@ -2517,8 +2668,10 @@ function preencherDocSalvo(tipo, dados) {
           if (ultima) {
             const trat = ultima.querySelector('.orc-trat');
             const val  = ultima.querySelector('.orc-val');
+            const dente = ultima.querySelector('.orc-dente');
             if (trat) trat.value = item.trat || '';
             if (val)  val.value  = item.val  || 0;
+            if (dente) dente.value = item.dente || '';
           }
         });
         if (typeof calcTotal === 'function') calcTotal();
@@ -2661,7 +2814,8 @@ function novoPlano() {
   if (!confirm('Criar novo plano de tratamento? O plano atual ficará como histórico.')) return;
   window._planoAtual = null;
   document.getElementById('orc-itens').innerHTML = '';
-  document.getElementById('orc-validade').value = HOJE;
+  document.getElementById('orc-validade').value = '';
+  document.getElementById('orc-validade-dias').value = '';
   document.getElementById('orc-pagamento').value = '';
   document.getElementById('orc-obs').value = '';
   addItemOrc(); addItemOrc(); addItemOrc();
