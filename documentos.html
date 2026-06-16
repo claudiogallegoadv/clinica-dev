@@ -322,7 +322,7 @@ textarea{resize:vertical}
           <input type="radio" name="orc-categoria" value="Harmonização Orofacial" checked onchange="toggleCategoriaOrc()"/> ✨ Harmonização Orofacial
         </label>
         <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--borda);border-radius:8px;cursor:pointer">
-          <input type="radio" name="orc-categoria" value="Odontológico" onchange="toggleCategoriaOrc()"/> 🦷 Odontológico (Dente)
+          <input type="radio" name="orc-categoria" value="Odontologia" onchange="toggleCategoriaOrc()"/> 🦷 Odontológico (Dente)
         </label>
       </div>
       <div id="orc-categoria-print" style="font-size:13px;font-weight:600;color:var(--verde-e);margin-bottom:1rem;display:none"></div>
@@ -1291,12 +1291,12 @@ function addItemOrc(){
 
 function listaTratsAtualOrc(){
   const cat=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
-  return cat==='Odontológico'?'lista-trats-dente':'lista-trats-harmonizacao';
+  return cat==='Odontologia'?'lista-trats-dente':'lista-trats-harmonizacao';
 }
 
 function toggleCategoriaOrc(resetar){
   const cat=document.querySelector('input[name="orc-categoria"]:checked')?.value||'Harmonização Orofacial';
-  const ehDente=cat==='Odontológico';
+  const ehDente=cat==='Odontologia';
   const listaId=ehDente?'lista-trats-dente':'lista-trats-harmonizacao';
   document.querySelectorAll('.orc-dente').forEach(el=>el.style.display=ehDente?'block':'none');
   document.querySelectorAll('.orc-trat').forEach(el=>el.setAttribute('list',listaId));
@@ -1407,7 +1407,7 @@ function addLinhaHistoricoOrc(){
   const tr=document.createElement('tr');
   tr.innerHTML=`<td style="padding:6px;border:1px solid var(--borda)"><input type="date" style="width:100%;padding:4px;font-size:12px"/></td>
     <td class="orc-hist-dente-col" style="padding:6px;border:1px solid var(--borda);display:none"><input type="text" placeholder="Dente" style="width:100%;padding:4px;font-size:12px"/></td>
-    <td style="padding:6px;border:1px solid var(--borda)"><input type="text" placeholder="Procedimento..." style="width:100%;padding:4px;font-size:12px"/></td>
+    <td style="padding:6px;border:1px solid var(--borda)"><input type="text" class="orc-trat" list="${listaTratsAtualOrc()}" placeholder="Procedimento..." style="width:100%;padding:4px;font-size:12px"/></td>
     <td style="padding:6px;border:1px solid var(--borda);text-align:right"><input type="number" min="0" step="0.01" placeholder="0,00" style="width:100%;padding:4px;font-size:12px;text-align:right"/></td>`;
   tb.appendChild(tr);
   toggleCategoriaOrc();
