@@ -137,7 +137,7 @@ textarea{resize:vertical}
   /* Anamnese — imprimir só perguntas respondidas (Sim ou Não), ocultar "—" não respondidas */
   .resp-row:has(input[value="naoresp"]:checked) { display: none !important; }
   /* Esconder o título do grupo (e o campo extra, se houver) quando nenhuma pergunta do grupo foi respondida */
-  #an-grupos > div:not(:has(.resp-row:not(:has(input[value="naoresp"]:checked)))) { display: none !important; }
+  #an-grupos > div:not(:has(input[value="sim"]:checked)):not(:has(input[value="nao"]:checked)) { display: none !important; }
   /* Planejamento — seções de Toxina/Preenchimento já controladas via JS (display:none inline) */
   #sec-toxina-wrap[style*="display: none"], #sec-preench-wrap[style*="display: none"] { display: none !important; }
   /* Evitar página em branco inicial */
