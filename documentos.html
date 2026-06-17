@@ -1429,16 +1429,17 @@ async function carregarHistoricoOrcInicial(historicoSalvo){
   const datasExistentes=new Set(base.map(r=>r[0]));
   atends.forEach(at=>{
     if(datasExistentes.has(at.data)) return;
-    addLinhaHistoricoOrc();
-    const trs=document.querySelectorAll('#orc-historico tr');
-    const tr=trs[trs.length-1];
-    const inputs=tr.querySelectorAll('input');
-    const procedimento=(at.trats||[]).map(t=>t.nome).join(' + ');
-    const dentes=[...new Set((at.trats||[]).map(t=>t.dente).filter(Boolean))].join(', ');
-    if(inputs[0]) inputs[0].value=at.data||'';
-    if(inputs[1]) inputs[1].value=dentes;
-    if(inputs[2]) inputs[2].value=procedimento;
-    if(inputs[3]) inputs[3].value=at.valor||'';
+    const trats=(at.trats&&at.trats.length)?at.trats:[{nome:'',dente:'',valor:at.valor}];
+    trats.forEach(t=>{
+      addLinhaHistoricoOrc();
+      const trs=document.querySelectorAll('#orc-historico tr');
+      const tr=trs[trs.length-1];
+      const inputs=tr.querySelectorAll('input');
+      if(inputs[0]) inputs[0].value=at.data||'';
+      if(inputs[1]) inputs[1].value=t.dente||'';
+      if(inputs[2]) inputs[2].value=t.nome||'';
+      if(inputs[3]) inputs[3].value=t.valor||'';
+    });
   });
   if(base.length===0 && atends.length===0){
     addLinhaHistoricoOrc();addLinhaHistoricoOrc();addLinhaHistoricoOrc();
@@ -1470,16 +1471,17 @@ async function atualizarHistoricoOrcDoAtendimento(silencioso){
     return;
   }
   atends.forEach(at=>{
-    addLinhaHistoricoOrc();
-    const trs=document.querySelectorAll('#orc-historico tr');
-    const tr=trs[trs.length-1];
-    const inputs=tr.querySelectorAll('input');
-    const procedimento=(at.trats||[]).map(t=>t.nome).join(' + ');
-    const dentes=[...new Set((at.trats||[]).map(t=>t.dente).filter(Boolean))].join(', ');
-    if(inputs[0]) inputs[0].value=at.data||'';
-    if(inputs[1]) inputs[1].value=dentes;
-    if(inputs[2]) inputs[2].value=procedimento;
-    if(inputs[3]) inputs[3].value=at.valor||'';
+    const trats=(at.trats&&at.trats.length)?at.trats:[{nome:'',dente:'',valor:at.valor}];
+    trats.forEach(t=>{
+      addLinhaHistoricoOrc();
+      const trs=document.querySelectorAll('#orc-historico tr');
+      const tr=trs[trs.length-1];
+      const inputs=tr.querySelectorAll('input');
+      if(inputs[0]) inputs[0].value=at.data||'';
+      if(inputs[1]) inputs[1].value=t.dente||'';
+      if(inputs[2]) inputs[2].value=t.nome||'';
+      if(inputs[3]) inputs[3].value=t.valor||'';
+    });
   });
   if(!silencioso) toast('Histórico atualizado a partir dos atendimentos registrados ✓','verde');
 }
