@@ -199,7 +199,6 @@ function setState(id){
   ['st-inativo','st-sucesso','st-form'].forEach(s=>{
     const el=document.getElementById(s);
     if(el) el.style.display=s===id?(s==='st-form'?'block':'flex'):'none';
-    if(el&&s===id) el.classList?.[s==='st-form'?'add':'add']('');
     if(el&&s!=='st-form') el.classList?.remove('active');
     if(el&&s===id&&s!=='st-form') el.classList?.add('active');
   });
