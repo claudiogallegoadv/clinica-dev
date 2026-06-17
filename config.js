@@ -8,7 +8,7 @@ const CLINICA_CONFIG = {
 
   // ── Banco de dados Supabase ──────────────────────────────────
   sb_url: 'https://rsdgztfvqnkrhzrkihol.supabase.co',
-  sb_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzQ5NjAwMDAwLCJleHAiOjIxNDk2MDAwMDB9.u9VULfDm5Ql-4ufiTkwz8Np0AvWy9Jcf3pB2RwYBUwg',
+  sb_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzZGd6dGZ2cW5rcmh6cmtpaG9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzkwMjgsImV4cCI6MjA5Njg1NTAyOH0.eLgjYAsrpExhWCf-1ZpSxe_5qL6Vp1gbtSb4ELer4Go',
 
   // ── Informações da clínica ───────────────────────────────────
   nome:          'Dra. Anna Carolina Dias',
