@@ -108,7 +108,7 @@
       <div class="sec-title">👤 Seus dados</div>
       <div class="fg">
         <div class="full"><label>Nome completo *</label><input type="text" id="p-nome" placeholder="Seu nome completo"/></div>
-        <div class="full"><label>WhatsApp *</label><input type="tel" id="p-tel" placeholder="(17) 99101-6897"/></div>
+        <div class="full"><label>WhatsApp *</label><input type="tel" id="p-tel" placeholder="(17) 99101-6897" oninput="mascaraTel(this)" maxlength="15"/></div>
         <div class="full"><label>Procedimento desejado</label><input type="text" id="p-proc" placeholder="Ex: Botox, Preenchimento labial..."/></div>
         <div class="full"><label>Observações (opcional)</label><textarea id="p-obs" rows="2" placeholder="Alguma informação importante para a Dra.?" style="min-height:70px;resize:none"></textarea></div>
       </div>
@@ -184,6 +184,14 @@ let dataSel=null, horaSel=null;
 
 function fDt(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 function fDtLong(s){if(!s)return'';const[y,m,d]=s.split('-');const dt=new Date(s+'T12:00:00');return`${DIAS_SEM[dt.getDay()]}, ${d} de ${MESES_N[parseInt(m)-1]} de ${y}`;}
+// Aplica máscara (XX) XXXXX-XXXX ao telefone enquanto a paciente digita
+function mascaraTel(i){
+  let v=i.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>10) i.value=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+  else if(v.length>6) i.value=`(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`;
+  else if(v.length>2) i.value=`(${v.slice(0,2)}) ${v.slice(2)}`;
+  else i.value=v;
+}
 // Escapa caracteres HTML perigosos antes de inserir dados digitados pela paciente via innerHTML (previne XSS armazenado)
 function escapeHtml(s){if(s===null||s===undefined)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
