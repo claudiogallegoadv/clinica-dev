@@ -793,6 +793,8 @@ const HOJE=new Date().toISOString().split('T')[0];
 function toast(m,t=''){const el=document.getElementById('toast');el.textContent=m;el.className='toast show '+t;setTimeout(()=>el.className='toast',3000);}
 function fDt(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 function fmtBRL(v){return'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});}
+// Escapa caracteres HTML perigosos antes de inserir dados do paciente via innerHTML (previne XSS armazenado)
+function escapeHtml(s){if(s===null||s===undefined)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 // CARREGAR PACIENTES
 async function carregar(){
@@ -808,7 +810,7 @@ function sugPac(){
   if(q.length<2){box.innerHTML='';return;}
   const r=pacs.filter(p=>p.nome.toLowerCase().includes(q)||(p.apelido&&p.apelido.toLowerCase().includes(q))).slice(0,6);
   if(!r.length){box.innerHTML='';return;}
-  box.innerHTML=`<div class="sug">${r.map(p=>`<div class="sug-item" onclick='selPac(${JSON.stringify(p).replace(/'/g,"&#39;")})'><strong>${p.nome}</strong>${p.apelido?` (${p.apelido})`:''}<br><span style="font-size:12px;color:var(--ct)">${p.telefone}</span></div>`).join('')}</div>`;
+  box.innerHTML=`<div class="sug">${r.map(p=>`<div class="sug-item" onclick='selPac(${JSON.stringify(p).replace(/'/g,"&#39;")})'><strong>${escapeHtml(p.nome)}</strong>${p.apelido?` (${escapeHtml(p.apelido)})`:''}<br><span style="font-size:12px;color:var(--ct)">${escapeHtml(p.telefone)}</span></div>`).join('')}</div>`;
 }
 
 function selPac(p){
@@ -816,7 +818,7 @@ function selPac(p){
   document.getElementById('busca-pac').value=p.nome;
   document.getElementById('sug-pac').innerHTML='';
   document.getElementById('pac-selecionada').style.display='block';
-  document.getElementById('pac-selecionada').innerHTML=`<div class="pac-info"><div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}${p.rg?' · RG: '+p.rg:''}</div></div></div>`;
+  document.getElementById('pac-selecionada').innerHTML=`<div class="pac-info"><div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+escapeHtml(p.cpf):''}${p.rg?' · RG: '+escapeHtml(p.rg):''}</div></div></div>`;
   document.getElementById('hdr-pac').textContent=p.nome;
   document.getElementById('sec-docs').style.display='block';
   carregarDocsSalvos();
@@ -963,7 +965,7 @@ function voltarDocs(){
 // ── RECEITUÁRIO MÉDICO ──
 function abrirReceituario(){
   const p=pacSelecionada; if(!p) return;
-  document.getElementById('rec-pac-info').innerHTML=`<div class="pac-info-nome">${p.nome}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}</div>`;
+  document.getElementById('rec-pac-info').innerHTML=`<div class="pac-info-nome">${escapeHtml(p.nome)}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+escapeHtml(p.cpf):''}</div>`;
   document.getElementById('rec-data').value=HOJE;
   document.getElementById('rec-cid').value='';
   document.getElementById('rec-obs').value='';
@@ -991,7 +993,7 @@ function addMedicamento(dados){
 // ── RECEITUÁRIO ESTÉTICO ──
 function abrirReceituarioEstetico(){
   const p=pacSelecionada; if(!p) return;
-  document.getElementById('rece-pac-info').innerHTML=`<div class="pac-info-nome">${p.nome}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}</div>`;
+  document.getElementById('rece-pac-info').innerHTML=`<div class="pac-info-nome">${escapeHtml(p.nome)}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+escapeHtml(p.cpf):''}</div>`;
   document.getElementById('rece-data').value=HOJE;
   document.getElementById('rece-procedimento').value='';
   document.getElementById('rece-obs').value='';
@@ -1118,7 +1120,7 @@ function toggleSecaoFeminina(){
 
 function abrirAnamnese(){
   const p=pacSelecionada;
-  document.getElementById('anamnese-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  document.getElementById('anamnese-pac-info').innerHTML=`<div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
   // Preencher campos com dados do cadastro
   if(p.endereco) document.getElementById('an-endereco').value=p.endereco;
   if(p.rg) document.getElementById('an-rg').value=p.rg;
@@ -1187,15 +1189,15 @@ function abrirTermo(tipo){
       <div style="font-size:10px;color:var(--ct)">Rua Capitão Daniel da Cunha Morais, 632 - Tanabi/SP · CEP: 15170-027</div>
       <div style="font-size:15px;font-weight:600;margin-top:12px;padding:6px;background:var(--verde-c);border-radius:8px;color:var(--verde-e)">${t.titulo}</div>
     </div>
-    <div class="pac-info"><div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div></div>
+    <div class="pac-info"><div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}</div></div></div>
     <div class="fg" style="margin-bottom:1rem">
       <div class="fgr"><label>CPF do Paciente</label><input type="text" id="${tipo}-cpf" value="${p.cpf||''}" placeholder="000.000.000-00"/></div>
       <div class="fgr"><label>CPF do Profissional</label><input type="text" value="296.114.268-79" readonly/></div>
     </div>
     <div class="termo-texto">
-      <p>Eu, <strong>${p.nome}</strong>, declaro estar ciente e concordo em realizar o procedimento de <strong>${t.procedimento}</strong>, conforme orientação e esclarecimentos prestados pela profissional responsável Dra. Anna Carolina Dias.</p>
+      <p>Eu, <strong>${escapeHtml(p.nome)}</strong>, declaro estar ciente e concordo em realizar o procedimento de <strong>${escapeHtml(t.procedimento)}</strong>, conforme orientação e esclarecimentos prestados pela profissional responsável Dra. Anna Carolina Dias.</p>
       <p>Declaro que recebi informações adequadas sobre o procedimento e suas possíveis complicações, riscos e benefícios. Entendo que ${t.descricao}</p>
-      <p><strong>Natureza do procedimento:</strong> Compreendo que o procedimento de ${t.procedimento} será realizado através de injeções nas áreas específicas acordadas com o(a) profissional responsável.</p>
+      <p><strong>Natureza do procedimento:</strong> Compreendo que o procedimento de ${escapeHtml(t.procedimento)} será realizado através de injeções nas áreas específicas acordadas com o(a) profissional responsável.</p>
       <p><strong>Benefícios e resultados esperados:</strong> Fui informado(a) de que ${t.beneficios} No entanto, entendo que os resultados podem variar de pessoa para pessoa, e não há garantia de resultados completos ou permanentes.</p>
       <p><strong>Riscos e complicações:</strong> Fui devidamente informado(a) sobre os riscos associados ao procedimento, que podem incluir, mas não se limitar a:</p>
       <ul>${t.riscos.map(r=>`<li>${r};</li>`).join('')}</ul>
@@ -1221,7 +1223,7 @@ function abrirTermo(tipo){
 // ── AUTORIZAÇÃO DE IMAGEM ──
 function abrirAutorizacaoImagem(){
   const p=pacSelecionada;
-  document.getElementById('imagem-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  document.getElementById('imagem-pac-info').innerHTML=`<div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}</div></div>`;
   document.getElementById('img-nome-display').textContent=p.nome;
   if(p.rg) document.getElementById('img-rg').value=p.rg;
   if(p.cpf) document.getElementById('img-cpf').value=p.cpf;
@@ -1234,7 +1236,7 @@ function abrirAutorizacaoImagem(){
 async function abrirOrcamento(){
   const p=pacSelecionada;
   if(!p) return;
-  document.getElementById('orc-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  document.getElementById('orc-pac-info').innerHTML=`<div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}</div></div>`;
   // Buscar plano ativo
   const{data:planos}=await db.from('planos_tratamento').select('*, plano_itens(*)').eq('paciente_id',p.id).eq('status','ativo').order('criado_em',{ascending:false}).limit(1);
   const plano=planos?.[0];
@@ -1924,7 +1926,7 @@ function toggleSecoesPlan(){
 
 async function abrirPlanejamento(){
   const p=pacSelecionada;
-  document.getElementById('plan-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  document.getElementById('plan-pac-info').innerHTML=`<div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
   document.getElementById('plan-procs').innerHTML=PLAN_PROCS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="plck-${i}" onchange="toggleSecoesPlan()"><label for="plck-${i}">${c}</label></div>`).join('');
   document.getElementById('plan-regioes').innerHTML=PLAN_REGIOES.map((r,i)=>`<div style="display:grid;grid-template-columns:140px 80px;gap:8px;align-items:center;margin-bottom:6px"><label style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--txt)">${r}</label><input type="number" id="plan-reg-${i}" placeholder="U" min="0" style="padding:5px 8px;font-size:13px" oninput="toggleSecoesPlan()"/></div>`).join('');
   document.getElementById('plan-preench').innerHTML='';
@@ -2003,7 +2005,7 @@ let estadoDentes={};
 async function abrirOdontograma(){
   const p=pacSelecionada;
   estadoDentes={};
-  document.getElementById('odonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  document.getElementById('odonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}</div></div>`;
   if(p.rg) document.getElementById('od-rg').value=p.rg;
   if(p.cpf) document.getElementById('od-cpf').value=p.cpf;
   if(p.endereco){const end=p.endereco.split(',');document.getElementById('od-end').value=p.endereco;}
@@ -2122,7 +2124,7 @@ const AO_BUCAL=[
 
 function abrirAnamneseOdonto(){
   const p=pacSelecionada;
-  document.getElementById('anodonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  document.getElementById('anodonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${escapeHtml(p.nome)}${p.apelido?` (${escapeHtml(p.apelido)})`:''}</div><div class="pac-info-sub">${escapeHtml(p.telefone)}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
   if(p.rg) document.getElementById('ao-rg').value=p.rg;
   if(p.cpf) document.getElementById('ao-cpf').value=p.cpf;
   if(p.endereco) document.getElementById('ao-end').value=p.endereco;
@@ -2453,7 +2455,7 @@ function adicionarProdutoOrc(dados){
   div.className = 'prod-orc-linha';
   div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 110px 130px auto;gap:6px;align-items:start;margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--borda)';
   // Sempre gerar opts do _produtosEstoque atual
-  const opts = _produtosEstoque.map(p=>`<option value="${p.id}" data-codigo="${p.codigo||''}" data-anvisa="${p.anvisa||''}" data-fabricante="${encodeURIComponent(p.fabricante||'')}" data-lote="${p.lote_atual||''}" data-fabricacao="${p.fabricacao_atual||''}" data-validade="${p.validade_atual||''}">${p.nome}</option>`).join('');
+  const opts = _produtosEstoque.map(p=>`<option value="${p.id}" data-codigo="${p.codigo||''}" data-anvisa="${p.anvisa||''}" data-fabricante="${encodeURIComponent(p.fabricante||'')}" data-lote="${p.lote_atual||''}" data-fabricacao="${p.fabricacao_atual||''}" data-validade="${p.validade_atual||''}">${escapeHtml(p.nome)}</option>`).join('');
   const qtdVal = (dados&&dados.qtd!=null) ? dados.qtd : 1;
   const loteVal = (dados&&dados.lote) ? dados.lote : '';
   const valVal = (dados&&dados.validade) ? dados.validade : '';

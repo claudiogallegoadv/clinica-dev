@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
   <title>Agendar Consulta — Dra. Anna Carolina Dias</title>
@@ -160,6 +159,8 @@
 </div>
 
 <script>
+const SB_URL='https://nathaeuqbeqlvkftbmes.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdGhhZXVxYmVxbHZrZnRibWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc4MzYsImV4cCI6MjA5NTQ3MzgzNn0.9t3q5C_h1pRb11gqRtpGGVpOUGey5TBzvMgal8h6wtg';
 const{createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
 
@@ -183,6 +184,8 @@ let dataSel=null, horaSel=null;
 
 function fDt(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 function fDtLong(s){if(!s)return'';const[y,m,d]=s.split('-');const dt=new Date(s+'T12:00:00');return`${DIAS_SEM[dt.getDay()]}, ${d} de ${MESES_N[parseInt(m)-1]} de ${y}`;}
+// Escapa caracteres HTML perigosos antes de inserir dados digitados pela paciente via innerHTML (previne XSS armazenado)
+function escapeHtml(s){if(s===null||s===undefined)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function setState(id){
   ['st-inativo','st-sucesso','st-form'].forEach(s=>{
@@ -314,10 +317,10 @@ function selHora(h){
   const tel=document.getElementById('p-tel').value.trim();
   const proc=document.getElementById('p-proc').value.trim();
   document.getElementById('confirm-resumo').innerHTML=`
-    <div class="resumo-item"><span class="resumo-icon">👤</span><div><strong>${nome}</strong><br><span style="color:var(--ct)">${tel}</span></div></div>
+    <div class="resumo-item"><span class="resumo-icon">👤</span><div><strong>${escapeHtml(nome)}</strong><br><span style="color:var(--ct)">${escapeHtml(tel)}</span></div></div>
     <div class="resumo-item"><span class="resumo-icon">📅</span><div>${fDtLong(dataSel)}</div></div>
     <div class="resumo-item"><span class="resumo-icon">🕐</span><div><strong>${horaSel}</strong></div></div>
-    ${proc?`<div class="resumo-item"><span class="resumo-icon">💉</span><div>${proc}</div></div>`:''}
+    ${proc?`<div class="resumo-item"><span class="resumo-icon">💉</span><div>${escapeHtml(proc)}</div></div>`:''}
   `;
 }
 
@@ -358,7 +361,7 @@ async function confirmarAgendamento(){
   // Tela de sucesso
   document.getElementById('st-suc-resumo').innerHTML=`
     <div style="font-weight:700;font-size:15px;margin-bottom:8px">📅 ${fDtLong(dataSel)} às ${horaSel}</div>
-    ${proc?`<div style="color:var(--verde-e);margin-bottom:4px">💉 ${proc}</div>`:''}
+    ${proc?`<div style="color:var(--verde-e);margin-bottom:4px">💉 ${escapeHtml(proc)}</div>`:''}
     <div style="color:var(--ct);font-size:12px;margin-top:8px">Rua Capitão Daniel da Cunha Morais, 632 · Tanabi/SP</div>
   `;
   // Link para salvar na agenda
