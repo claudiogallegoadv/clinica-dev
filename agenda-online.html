@@ -344,19 +344,26 @@ async function confirmarAgendamento(){
   const tel=document.getElementById('p-tel').value.replace(/\D/g,'');
   const proc=document.getElementById('p-proc').value.trim();
   const obs=document.getElementById('p-obs').value.trim();
-  const{error}=await db.from('agenda').insert({
-    nome,
-    telefone:tel||null,
-    procedimento:proc||null,
-    data:dataSel,
-    hora:horaSel+':00',
-    observacao:obs||null,
-    status:'aguardando',
-    origem:'online',
-  });
-  if(error){
+  try{
+    const{error}=await db.from('agenda').insert({
+      nome,
+      telefone:tel||null,
+      procedimento:proc||null,
+      data:dataSel,
+      hora:horaSel+':00',
+      observacao:obs||null,
+      status:'aguardando',
+      origem:'online',
+    });
+    if(error){
+      btn.disabled=false;btn.textContent='✅ Confirmar solicitação';
+      console.error('[agenda-online] erro ao inserir:',error);
+      alert('Erro ao enviar: '+error.message);return;
+    }
+  }catch(e){
     btn.disabled=false;btn.textContent='✅ Confirmar solicitação';
-    alert('Erro ao enviar: '+error.message);return;
+    console.error('[agenda-online] exceção ao enviar:',e);
+    alert('Erro ao enviar solicitação. Verifique sua conexão e tente novamente.');return;
   }
   // Tela de sucesso
   document.getElementById('st-suc-resumo').innerHTML=`
