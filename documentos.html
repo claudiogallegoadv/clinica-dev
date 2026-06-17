@@ -3075,6 +3075,7 @@ window.abrirModalRealizado = async function() {
     
     if (!trat) return;
     if (item?.status === 'pago') return; // já pago, não aparece
+    if (item?.status === 'realizado') return; // já realizado, aguardando pagamento — cobrar via Carteira a Receber
     if (item?.status === 'cancelado') return; // cancelado, não aparece
     
     if (!check || check.checked) realizados.push({ trat, val, itemId, categoria, dente });
