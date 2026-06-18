@@ -4032,18 +4032,19 @@ function abrirConfAgOnline(){
   const m=document.getElementById('m-ag-online');
   if(!m){console.error('[confAgOnline] não encontrado');return;}
   m.style.display='flex';
+  m.classList.add('open');
   const conf=JSON.parse(localStorage.getItem('conf_ag_online')||'{}');
-  document.getElementById('cao-ativo').checked = conf.ativo !== false;
-  document.getElementById('cao-hora-ini').value = conf.hora_ini||'09:00';
-  document.getElementById('cao-hora-fim').value = conf.hora_fim||'18:00';
-  document.getElementById('cao-duracao').value  = conf.duracao||60;
-  document.getElementById('cao-max-dias').value = conf.max_dias||30;
+  if(document.getElementById('cao-ativo')) document.getElementById('cao-ativo').checked = conf.ativo !== false;
+  if(document.getElementById('cao-hora-ini')) document.getElementById('cao-hora-ini').value = conf.hora_ini||'09:00';
+  if(document.getElementById('cao-hora-fim')) document.getElementById('cao-hora-fim').value = conf.hora_fim||'18:00';
+  if(document.getElementById('cao-duracao')) document.getElementById('cao-duracao').value  = conf.duracao||60;
+  if(document.getElementById('cao-max-dias')) document.getElementById('cao-max-dias').value = conf.max_dias||30;
   const dias = conf.dias||[1,2,3,4,5,6];
   document.querySelectorAll('[name="cao-dia"]').forEach(cb=>{
     cb.checked = dias.includes(parseInt(cb.value));
   });
   const link = window.location.href.replace('index.html','').replace(/\?.*$/,'')+'agenda-online.html';
-  document.getElementById('cao-link').value = link;
+  if(document.getElementById('cao-link')) document.getElementById('cao-link').value = link;
 }
 
 function salvarConfAgOnline(){
