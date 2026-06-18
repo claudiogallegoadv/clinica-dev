@@ -844,9 +844,6 @@ textarea{resize:vertical;min-height:70px}
 
 <div class="toast" id="toast"></div>
 
-<!-- Modal: ajuste de datas em fim de semana -->
-<div class="mb" id="m-fds" style="z-index:3600">
-
 <!-- Modal: bloqueio de horário -->
 <div class="mb" id="m-bloqueio" style="z-index:3700">
   <div class="mx" style="max-width:400px">
@@ -867,6 +864,9 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
 </div>
+
+<!-- Modal: ajuste de datas em fim de semana -->
+<div class="mb" id="m-fds" style="z-index:3600">
   <div class="mx" style="max-width:480px">
     <h3>⚠️ Datas em fim de semana</h3>
     <p style="font-size:13px;color:var(--ct);margin-bottom:16px">As consultas abaixo caem em sábado ou domingo. Ajuste as datas ou mantenha como estão.</p>
@@ -1803,21 +1803,25 @@ async function renderRel(){
         const fim=new Date(hoje3.getFullYear(),hoje3.getMonth()+i+1,0);
         meses3.push({ini:d.toISOString().split('T')[0],fim:fim.toISOString().split('T')[0],nome:MESES_N[d.getMonth()]+' '+d.getFullYear()});
       }
-      const{data:projData}=await db.from('financeiro').select('tipo,valor,status,data,data_vencimento').gte('data',meses3[0].ini).lte('data',meses3[2].fim);
+      const{data:projData,error:projErr}=await db.from('financeiro').select('tipo,valor,status,data').gte('data',meses3[0].ini).lte('data',meses3[2].fim);
+      if(projErr) throw projErr;
+      const fmt=v=>'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
       elFluxo.innerHTML=meses3.map(mes=>{
-        const receitas=(projData||[]).filter(l=>l.tipo==='receita'&&(l.data||'')>=mes.ini&&(l.data||'')<=mes.fim).reduce((s,l)=>s+(l.valor||0),0);
-        const despesas=(projData||[]).filter(l=>l.tipo==='despesa'&&(l.data||'')>=mes.ini&&(l.data||'')<=mes.fim).reduce((s,l)=>s+(l.valor||0),0);
-        const saldo=receitas-despesas;
+        const recebido=(projData||[]).filter(l=>l.tipo==='receita'&&l.status==='recebido'&&(l.data||'')>=mes.ini&&(l.data||'')<=mes.fim).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+        const aReceber=(projData||[]).filter(l=>l.tipo==='receita'&&l.status!=='recebido'&&(l.data||'')>=mes.ini&&(l.data||'')<=mes.fim).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+        const despesas=(projData||[]).filter(l=>l.tipo==='despesa'&&(l.data||'')>=mes.ini&&(l.data||'')<=mes.fim).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+        const saldo=recebido+aReceber-despesas;
         return`<div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px">
           <div style="font-size:12px;font-weight:700;color:var(--ct);margin-bottom:8px">${mes.nome}</div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
-            <span style="font-size:13px;color:var(--verde)">↑ ${fmtBRL(receitas)}</span>
-            <span style="font-size:13px;color:var(--vermelho)">↓ ${fmtBRL(despesas)}</span>
-            <span style="font-size:13px;font-weight:700;color:${saldo>=0?'var(--verde)':'var(--vermelho)'}">${saldo>=0?'+':''}${fmtBRL(saldo)}</span>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:12px;color:var(--verde)">✅ Recebido: <strong>${fmt(recebido)}</strong></span>
+            ${aReceber>0?`<span style="font-size:12px;color:#d97706">⏳ A receber: <strong>${fmt(aReceber)}</strong></span>`:''}
+            <span style="font-size:12px;color:var(--vermelho)">↓ Despesas: <strong>${fmt(despesas)}</strong></span>
           </div>
+          <div style="font-size:13px;font-weight:700;color:${saldo>=0?'var(--verde)':'var(--vermelho)'};padding-top:6px;border-top:1px solid var(--borda)">Saldo projetado: ${saldo>=0?'+':''}${fmt(saldo)}</div>
         </div>`;
       }).join('');
-    }catch(e){elFluxo.innerHTML='<div style="font-size:12px;color:var(--ct)">Não foi possível calcular.</div>';}
+    }catch(e){console.error('[fluxo]',e);elFluxo.innerHTML='<div style="font-size:12px;color:var(--ct)">Não foi possível calcular.</div>';}
   }
 }
 
