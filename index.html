@@ -859,7 +859,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="fgr full"><label>Motivo</label><input type="text" id="blq-motivo" placeholder="Ex: Almoço, Reunião, Folga..." /></div>
     </div>
     <div class="br">
-      <button class="btn" onclick="document.getElementById('m-bloqueio').classList.remove('open')">Cancelar</button>
+      <button class="btn" onclick="const m=document.querySelector('#m-bloqueio');m.classList.remove('open');m.style.display='none'">Cancelar</button>
       <button class="btn" style="background:var(--vermelho);color:white;border-color:var(--vermelho)" onclick="confirmarBloqueio()">🚫 Bloquear</button>
     </div>
   </div>
@@ -1000,17 +1000,17 @@ function toggleBlqFim(){
 }
 
 function abrirBloqueioHorario(){
-  alert('Bloquear clicado!');
-  const m=document.getElementById('m-bloqueio');
-  if(!m){toast('Modal de bloqueio não encontrado!','vermelho');return;}
+  const m=document.querySelector('#m-bloqueio');
+  if(!m){console.error('[bloqueio] modal não encontrado no DOM');return;}
   try{
-    document.getElementById('blq-data').value=agDia;
-    document.getElementById('blq-ini').value='12:00';
-    document.getElementById('blq-fim').value='';
-    document.getElementById('blq-fim').disabled=false;
-    document.getElementById('blq-fechar-agenda').checked=false;
-    document.getElementById('blq-motivo').value='';
+    m.querySelector('#blq-data').value=agDia;
+    m.querySelector('#blq-ini').value='12:00';
+    m.querySelector('#blq-fim').value='';
+    m.querySelector('#blq-fim').disabled=false;
+    m.querySelector('#blq-fechar-agenda').checked=false;
+    m.querySelector('#blq-motivo').value='';
   }catch(e){console.warn('[blq-campos]',e);}
+  m.style.display='flex';
   m.classList.add('open');
 }
 
