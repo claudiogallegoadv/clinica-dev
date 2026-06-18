@@ -1000,6 +1000,9 @@ function toggleBlqFim(){
 }
 
 function abrirBloqueioHorario(){
+  alert('Bloquear clicado!');
+  const m=document.getElementById('m-bloqueio');
+  if(!m){toast('Modal de bloqueio não encontrado!','vermelho');return;}
   try{
     document.getElementById('blq-data').value=agDia;
     document.getElementById('blq-ini').value='12:00';
@@ -1007,11 +1010,8 @@ function abrirBloqueioHorario(){
     document.getElementById('blq-fim').disabled=false;
     document.getElementById('blq-fechar-agenda').checked=false;
     document.getElementById('blq-motivo').value='';
-    document.getElementById('m-bloqueio').classList.add('open');
-  }catch(e){
-    console.error('[bloqueio]',e);
-    toast('Erro ao abrir modal de bloqueio: '+e.message,'vermelho');
-  }
+  }catch(e){console.warn('[blq-campos]',e);}
+  m.classList.add('open');
 }
 
 async function confirmarBloqueio(){
