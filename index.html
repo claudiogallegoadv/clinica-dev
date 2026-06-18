@@ -3058,12 +3058,28 @@ async function salvarConsulta(){
   const recFreq=parseInt(document.getElementById('ag-rec-freq')?.value||'0');
   const recQtd=parseInt(document.getElementById('ag-rec-qtd')?.value||'2');
   if(!aid && recFreq>0 && recQtd>1){
+    const DIAS_EX=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
     const recPayloads=[];
+    const datasFinaisSemana=[];
     for(let i=1;i<recQtd;i++){
       const dt=new Date(data+'T12:00:00');
       if(recFreq===30) dt.setMonth(dt.getMonth()+i);
       else dt.setDate(dt.getDate()+recFreq*i);
-      recPayloads.push({...payload,data:dt.toISOString().split('T')[0]});
+      const dtStr=dt.toISOString().split('T')[0];
+      const diaSem=dt.getDay();
+      if(diaSem===0||diaSem===6){
+        const[y,m,d2]=dtStr.split('-');
+        datasFinaisSemana.push(`${DIAS_EX[diaSem]}, ${d2}/${m}/${y}`);
+      }
+      recPayloads.push({...payload,data:dtStr});
+    }
+    // Aviso de fim de semana
+    if(datasFinaisSemana.length>0){
+      const aviso=`⚠️ As seguintes datas recorrentes caem em fim de semana:\n\n${datasFinaisSemana.join('\n')}\n\nDeseja agendar mesmo assim?`;
+      if(!confirm(aviso)){
+        btn.disabled=false;btn.innerHTML='✓ Salvar';
+        return;
+      }
     }
     await db.from('agenda').insert(recPayloads);
     toast(`Consulta salva! ✓ (+ ${recQtd-1} repetição${recQtd-1>1?'ões':''} criadas)`,'verde');
