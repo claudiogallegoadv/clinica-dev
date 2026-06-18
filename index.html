@@ -846,6 +846,27 @@ textarea{resize:vertical;min-height:70px}
 
 <!-- Modal: ajuste de datas em fim de semana -->
 <div class="mb" id="m-fds" style="z-index:3600">
+
+<!-- Modal: bloqueio de horário -->
+<div class="mb" id="m-bloqueio" style="z-index:3700">
+  <div class="mx" style="max-width:400px">
+    <h3>🚫 Bloquear horário</h3>
+    <div class="fg" style="margin-top:12px">
+      <div class="fgr full"><label>Data</label><input type="date" id="blq-data"/></div>
+      <div class="fgr"><label>Início</label><input type="time" id="blq-ini" step="1800"/></div>
+      <div class="fgr"><label>Fim <span style="font-weight:400;font-size:11px;color:var(--ct)">(opcional)</span></label><input type="time" id="blq-fim" step="1800" placeholder="Deixe vazio = só este horário"/></div>
+      <div class="fgr full" style="align-items:center;flex-direction:row;gap:8px">
+        <input type="checkbox" id="blq-fechar-agenda" onchange="toggleBlqFim()" style="width:16px;height:16px;accent-color:var(--vermelho);flex-shrink:0"/>
+        <label for="blq-fechar-agenda" style="font-size:13px;cursor:pointer;font-weight:400">Fechar agenda a partir deste horário até o fim do dia</label>
+      </div>
+      <div class="fgr full"><label>Motivo</label><input type="text" id="blq-motivo" placeholder="Ex: Almoço, Reunião, Folga..." /></div>
+    </div>
+    <div class="br">
+      <button class="btn" onclick="document.getElementById('m-bloqueio').classList.remove('open')">Cancelar</button>
+      <button class="btn" style="background:var(--vermelho);color:white;border-color:var(--vermelho)" onclick="confirmarBloqueio()">🚫 Bloquear</button>
+    </div>
+  </div>
+</div>
   <div class="mx" style="max-width:480px">
     <h3>⚠️ Datas em fim de semana</h3>
     <p style="font-size:13px;color:var(--ct);margin-bottom:16px">As consultas abaixo caem em sábado ou domingo. Ajuste as datas ou mantenha como estão.</p>
@@ -972,20 +993,71 @@ async function desbloquearHorario(id){
   carregarAgenda();
 }
 
+function toggleBlqFim(){
+  const checked=document.getElementById('blq-fechar-agenda').checked;
+  document.getElementById('blq-fim').disabled=checked;
+  if(checked) document.getElementById('blq-fim').value='';
+}
+
 function abrirBloqueioHorario(){
-  const data=document.getElementById('ag-data')?.value||agDia;
-  const hora=prompt('Bloquear qual horário? (HH:MM)\nData: '+data.split('-').reverse().join('/'),'09:00');
-  if(!hora||!/^\d{2}:\d{2}$/.test(hora)){if(hora!==null)toast('Horário inválido. Use o formato HH:MM','vermelho');return;}
-  const motivo=prompt('Motivo do bloqueio (opcional):','')||'Horário bloqueado';
-  db.from('agenda').insert({
-    nome:motivo,data,hora:hora+':00',status:'bloqueado',
+  document.getElementById('blq-data').value=agDia;
+  document.getElementById('blq-ini').value='12:00';
+  document.getElementById('blq-fim').value='';
+  document.getElementById('blq-fim').disabled=false;
+  document.getElementById('blq-fechar-agenda').checked=false;
+  document.getElementById('blq-motivo').value='';
+  document.getElementById('m-bloqueio').classList.add('open');
+}
+
+async function confirmarBloqueio(){
+  const data=document.getElementById('blq-data').value;
+  const ini=document.getElementById('blq-ini').value;
+  const fim=document.getElementById('blq-fim').value;
+  const fecharAgenda=document.getElementById('blq-fechar-agenda').checked;
+  const motivo=document.getElementById('blq-motivo').value.trim()||'Horário bloqueado';
+  if(!data||!ini){toast('Informe a data e o horário de início','vermelho');return;}
+
+  // Gerar lista de horários a bloquear
+  const horarios=[];
+  const [hIni,mIni]=ini.split(':').map(Number);
+
+  if(fecharAgenda){
+    // Bloquear do início até 20:00 (fim do expediente padrão)
+    for(let h=hIni;h<=20;h++){
+      for(let m=(h===hIni?mIni:0);m<60;m+=30){
+        horarios.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+      }
+    }
+  } else if(fim){
+    // Bloquear range início → fim
+    const [hFim,mFim]=fim.split(':').map(Number);
+    const totalIni=hIni*60+mIni;
+    const totalFim=hFim*60+mFim;
+    if(totalFim<=totalIni){toast('O horário de fim deve ser após o início','vermelho');return;}
+    for(let t=totalIni;t<totalFim;t+=30){
+      const h=Math.floor(t/60),m=t%60;
+      horarios.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+    }
+  } else {
+    // Bloquear só o horário de início
+    horarios.push(ini+':00');
+  }
+
+  if(!horarios.length){toast('Nenhum horário para bloquear','vermelho');return;}
+
+  const payloads=horarios.map(hora=>({
+    nome:motivo,data,hora,status:'bloqueado',
     procedimento:null,telefone:null,observacao:motivo,paciente_id:null
-  }).then(({error})=>{
-    if(error){toast('Erro ao bloquear: '+error.message,'vermelho');return;}
-    toast('🚫 Horário bloqueado ✓','verde');
-    logAuditoria('Bloqueio de horário',`${data} ${hora} — ${motivo}`);
-    carregarAgenda();
-  });
+  }));
+
+  const{error}=await db.from('agenda').insert(payloads);
+  if(error){toast('Erro ao bloquear: '+error.message,'vermelho');return;}
+
+  document.getElementById('m-bloqueio').classList.remove('open');
+  const desc=fecharAgenda?`A partir de ${ini}`:(fim?`${ini} até ${fim}`:ini);
+  toast(`🚫 ${horarios.length} horário${horarios.length>1?'s':''} bloqueado${horarios.length>1?'s':''}! (${desc})`,'verde');
+  logAuditoria('Bloqueio de horário',`${data} · ${desc} — ${motivo}`);
+  carregarAgenda();
 }
 
 agMes=new Date(HOJE.getFullYear(),HOJE.getMonth(),1);
