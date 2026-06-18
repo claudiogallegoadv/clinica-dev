@@ -859,7 +859,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="fgr full"><label>Motivo</label><input type="text" id="blq-motivo" placeholder="Ex: Almoço, Reunião, Folga..." /></div>
     </div>
     <div class="br">
-      <button class="btn" onclick="const m=document.querySelector('#m-bloqueio');m.classList.remove('open');m.style.display='none'">Cancelar</button>
+      <button class="btn" onclick="const m=document.querySelector('#m-bloqueio');m.removeAttribute('style');m.classList.remove('open')">Cancelar</button>
       <button class="btn" style="background:var(--vermelho);color:white;border-color:var(--vermelho)" onclick="confirmarBloqueio()">🚫 Bloquear</button>
     </div>
   </div>
@@ -1001,17 +1001,23 @@ function toggleBlqFim(){
 
 function abrirBloqueioHorario(){
   const m=document.querySelector('#m-bloqueio');
-  if(!m){console.error('[bloqueio] modal não encontrado no DOM');return;}
-  try{
-    m.querySelector('#blq-data').value=agDia;
-    m.querySelector('#blq-ini').value='12:00';
-    m.querySelector('#blq-fim').value='';
-    m.querySelector('#blq-fim').disabled=false;
-    m.querySelector('#blq-fechar-agenda').checked=false;
-    m.querySelector('#blq-motivo').value='';
-  }catch(e){console.warn('[blq-campos]',e);}
-  m.style.display='flex';
+  if(!m){console.error('[bloqueio] modal não encontrado');return;}
+  // Forçar exibição com inline style completo (ignora CSS display:none)
+  m.setAttribute('style','display:flex!important;z-index:3700;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:1rem');
   m.classList.add('open');
+  // Preencher campos após garantir que está visível
+  setTimeout(()=>{
+    const data=document.getElementById('blq-data');
+    const ini=document.getElementById('blq-ini');
+    const fim=document.getElementById('blq-fim');
+    const fech=document.getElementById('blq-fechar-agenda');
+    const mot=document.getElementById('blq-motivo');
+    if(data) data.value=agDia||'';
+    if(ini) ini.value='12:00';
+    if(fim){fim.value='';fim.disabled=false;}
+    if(fech) fech.checked=false;
+    if(mot) mot.value='';
+  },50);
 }
 
 async function confirmarBloqueio(){
@@ -4030,6 +4036,8 @@ async function rejeitarPedido(id, tel, nome){
 function abrirConfAgOnline(){
   const m=document.querySelector('#m-ag-online');
   if(!m){console.error('[confAgOnline] modal não encontrado');return;}
+  m.setAttribute('style','display:flex!important;z-index:3600;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:1rem');
+  m.classList.add('open');
   const conf=JSON.parse(localStorage.getItem('conf_ag_online')||'{}');
   document.getElementById('cao-ativo').checked = conf.ativo !== false;
   document.getElementById('cao-hora-ini').value = conf.hora_ini||'09:00';
@@ -4042,8 +4050,6 @@ function abrirConfAgOnline(){
   });
   const link = window.location.href.replace('index.html','').replace(/\?.*$/,'')+'agenda-online.html';
   document.getElementById('cao-link').value = link;
-  m.style.display='flex';
-  m.classList.add('open');
 }
 
 function salvarConfAgOnline(){
