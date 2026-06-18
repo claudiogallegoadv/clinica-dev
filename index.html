@@ -779,6 +779,34 @@ textarea{resize:vertical;min-height:70px}
 <script>
 const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
+// Aviso automático: qualquer insert/update/delete/upsert que falhar mostra toast de erro,
+// mesmo que o código que chamou não verifique 'error' explicitamente.
+(function(){
+  const _from=db.from.bind(db);
+  const _ACAO={insert:'salvar',update:'atualizar',delete:'excluir',upsert:'salvar'};
+  db.from=function(tabela){
+    const qb=_from(tabela);
+    ['insert','update','delete','upsert'].forEach(function(metodo){
+      const orig=qb[metodo];
+      if(typeof orig!=='function')return;
+      qb[metodo]=function(...args){
+        const res=orig.apply(qb,args);
+        const origThen=res.then.bind(res);
+        res.then=function(onOk,onErr){
+          return origThen(function(r){
+            if(r&&r.error){
+              console.error('['+tabela+'.'+metodo+']',r.error);
+              if(typeof toast==='function')toast('Erro ao '+_ACAO[metodo]+' ('+tabela+'): '+(r.error.message||'falha desconhecida'),'vermelho');
+            }
+            return onOk?onOk(r):r;
+          },onErr);
+        };
+        return res;
+      };
+    });
+    return qb;
+  };
+})();
 
 let pacs=[],consultas=[];
 let mWppPac=null,mWppTipo='ret',mWppTrat=null;
@@ -3979,7 +4007,7 @@ async function verificarNotificacoes(){
 
     // 1. CONSULTAS AMANHÃ
     if(horaAtual >= 18){
-      const{data:agendamentos}=await db.from('agendamentos').select('*,pacientes(nome)').eq('data',amanhaStr).eq('status','agendado');
+      const{data:agendamentos}=await db.from('agenda').select('*,pacientes(nome)').eq('data',amanhaStr).eq('status','agendado');
       if(agendamentos&&agendamentos.length>0){
         const nomes=agendamentos.map(a=>a.pacientes?.nome||'Paciente').join(', ');
         await enviarNotif(
@@ -4053,11 +4081,12 @@ async function verificarNotificacoes(){
     }
 
     // 5. VERIFICAÇÕES PÓS-PROCEDIMENTO DE HOJE
-    const{data:atendimentos}=await db.from('atendimentos').select('*,pacientes(nome)').eq('data_verificacao',hoje);
-    if(atendimentos&&atendimentos.length>0){
+    const verHoje=[];
+    pacs.forEach(p=>(p.atendimentos||[]).forEach(a=>{if(a.verificacaoData===hoje)verHoje.push({pacientes:{nome:p.nome}});}));
+    if(verHoje.length>0){
       await enviarNotif(
-        `🔬 ${atendimentos.length} verificação${atendimentos.length>1?'s':''} pós-procedimento hoje`,
-        atendimentos.map(a=>a.pacientes?.nome||'Paciente').join(', '),
+        `🔬 ${verHoje.length} verificação${verHoje.length>1?'s':''} pós-procedimento hoje`,
+        verHoje.map(a=>a.pacientes?.nome||'Paciente').join(', '),
         'verificacoes-hoje',
         'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
       );
