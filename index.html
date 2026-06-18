@@ -4028,6 +4028,8 @@ async function rejeitarPedido(id, tel, nome){
 
 // ── Modal de configuração do agendamento online ──
 function abrirConfAgOnline(){
+  const m=document.querySelector('#m-ag-online');
+  if(!m){console.error('[confAgOnline] modal não encontrado');return;}
   const conf=JSON.parse(localStorage.getItem('conf_ag_online')||'{}');
   document.getElementById('cao-ativo').checked = conf.ativo !== false;
   document.getElementById('cao-hora-ini').value = conf.hora_ini||'09:00';
@@ -4038,10 +4040,10 @@ function abrirConfAgOnline(){
   document.querySelectorAll('[name="cao-dia"]').forEach(cb=>{
     cb.checked = dias.includes(parseInt(cb.value));
   });
-  // Gerar link
   const link = window.location.href.replace('index.html','').replace(/\?.*$/,'')+'agenda-online.html';
   document.getElementById('cao-link').value = link;
-  document.getElementById('m-ag-online').classList.add('open');
+  m.style.display='flex';
+  m.classList.add('open');
 }
 
 function salvarConfAgOnline(){
