@@ -845,7 +845,7 @@ textarea{resize:vertical;min-height:70px}
 <div class="toast" id="toast"></div>
 
 <!-- Modal: bloqueio de horário -->
-<div class="mb" id="m-bloqueio" style="z-index:3700">
+<div id="m-bloqueio" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3700;align-items:center;justify-content:center;padding:1rem">
   <div class="mx" style="max-width:400px">
     <h3>🚫 Bloquear horário</h3>
     <div class="fg" style="margin-top:12px">
@@ -859,7 +859,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="fgr full"><label>Motivo</label><input type="text" id="blq-motivo" placeholder="Ex: Almoço, Reunião, Folga..." /></div>
     </div>
     <div class="br">
-      <button class="btn" onclick="const m=document.querySelector('#m-bloqueio');m.removeAttribute('style');m.classList.remove('open')">Cancelar</button>
+      <button class="btn" onclick="document.getElementById('m-bloqueio').style.display='none'">Cancelar</button>
       <button class="btn" style="background:var(--vermelho);color:white;border-color:var(--vermelho)" onclick="confirmarBloqueio()">🚫 Bloquear</button>
     </div>
   </div>
@@ -1000,24 +1000,19 @@ function toggleBlqFim(){
 }
 
 function abrirBloqueioHorario(){
-  const m=document.querySelector('#m-bloqueio');
-  if(!m){console.error('[bloqueio] modal não encontrado');return;}
-  // Forçar exibição com inline style completo (ignora CSS display:none)
-  m.setAttribute('style','display:flex!important;z-index:3700;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:1rem');
-  m.classList.add('open');
-  // Preencher campos após garantir que está visível
-  setTimeout(()=>{
-    const data=document.getElementById('blq-data');
-    const ini=document.getElementById('blq-ini');
-    const fim=document.getElementById('blq-fim');
-    const fech=document.getElementById('blq-fechar-agenda');
-    const mot=document.getElementById('blq-motivo');
-    if(data) data.value=agDia||'';
-    if(ini) ini.value='12:00';
-    if(fim){fim.value='';fim.disabled=false;}
-    if(fech) fech.checked=false;
-    if(mot) mot.value='';
-  },50);
+  const m=document.getElementById('m-bloqueio');
+  if(!m){console.error('[bloqueio] não encontrado');return;}
+  m.style.display='flex';
+  const data=document.getElementById('blq-data');
+  const ini=document.getElementById('blq-ini');
+  const fim=document.getElementById('blq-fim');
+  const fech=document.getElementById('blq-fechar-agenda');
+  const mot=document.getElementById('blq-motivo');
+  if(data) data.value=agDia||'';
+  if(ini) ini.value='12:00';
+  if(fim){fim.value='';fim.disabled=false;}
+  if(fech) fech.checked=false;
+  if(mot) mot.value='';
 }
 
 async function confirmarBloqueio(){
@@ -1064,7 +1059,7 @@ async function confirmarBloqueio(){
   const{error}=await db.from('agenda').insert(payloads);
   if(error){toast('Erro ao bloquear: '+error.message,'vermelho');return;}
 
-  document.getElementById('m-bloqueio').classList.remove('open');
+  document.getElementById('m-bloqueio').style.display='none';
   const desc=fecharAgenda?`A partir de ${ini}`:(fim?`${ini} até ${fim}`:ini);
   toast(`🚫 ${horarios.length} horário${horarios.length>1?'s':''} bloqueado${horarios.length>1?'s':''}! (${desc})`,'verde');
   logAuditoria('Bloqueio de horário',`${data} · ${desc} — ${motivo}`);
@@ -4034,10 +4029,9 @@ async function rejeitarPedido(id, tel, nome){
 
 // ── Modal de configuração do agendamento online ──
 function abrirConfAgOnline(){
-  const m=document.querySelector('#m-ag-online');
-  if(!m){console.error('[confAgOnline] modal não encontrado');return;}
-  m.setAttribute('style','display:flex!important;z-index:3600;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:1rem');
-  m.classList.add('open');
+  const m=document.getElementById('m-ag-online');
+  if(!m){console.error('[confAgOnline] não encontrado');return;}
+  m.style.display='flex';
   const conf=JSON.parse(localStorage.getItem('conf_ag_online')||'{}');
   document.getElementById('cao-ativo').checked = conf.ativo !== false;
   document.getElementById('cao-hora-ini').value = conf.hora_ini||'09:00';
