@@ -1000,13 +1000,18 @@ function toggleBlqFim(){
 }
 
 function abrirBloqueioHorario(){
-  document.getElementById('blq-data').value=agDia;
-  document.getElementById('blq-ini').value='12:00';
-  document.getElementById('blq-fim').value='';
-  document.getElementById('blq-fim').disabled=false;
-  document.getElementById('blq-fechar-agenda').checked=false;
-  document.getElementById('blq-motivo').value='';
-  document.getElementById('m-bloqueio').classList.add('open');
+  try{
+    document.getElementById('blq-data').value=agDia;
+    document.getElementById('blq-ini').value='12:00';
+    document.getElementById('blq-fim').value='';
+    document.getElementById('blq-fim').disabled=false;
+    document.getElementById('blq-fechar-agenda').checked=false;
+    document.getElementById('blq-motivo').value='';
+    document.getElementById('m-bloqueio').classList.add('open');
+  }catch(e){
+    console.error('[bloqueio]',e);
+    toast('Erro ao abrir modal de bloqueio: '+e.message,'vermelho');
+  }
 }
 
 async function confirmarBloqueio(){
