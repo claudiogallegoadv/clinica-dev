@@ -22,7 +22,7 @@ const CLINICA_CONFIG = {
   logo:          'logo.jpg',           // caminho relativo ou URL completa
 
   // ── Sistema ──────────────────────────────────────────────────
-  base_url:      'https://claudiogallegoadv.github.io/clinica-anna-carolina/',
+  base_url:      'https://claudiogallegoadv.github.io/clinica-dev/',
 
   // ── Segurança ────────────────────────────────────────────────
   senha:         '1234',   // PIN de acesso — troque por algo seguro!
