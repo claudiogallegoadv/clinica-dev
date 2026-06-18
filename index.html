@@ -796,6 +796,19 @@ textarea{resize:vertical;min-height:70px}
 
 <div class="toast" id="toast"></div>
 
+<!-- Modal: ajuste de datas em fim de semana -->
+<div class="mb" id="m-fds" style="z-index:3600">
+  <div class="mx" style="max-width:480px">
+    <h3>⚠️ Datas em fim de semana</h3>
+    <p style="font-size:13px;color:var(--ct);margin-bottom:16px">As consultas abaixo caem em sábado ou domingo. Ajuste as datas ou mantenha como estão.</p>
+    <div id="fds-lista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
+    <div class="br">
+      <button class="btn" onclick="fdsManterTodas()">Manter como estão</button>
+      <button class="btn pri" onclick="fdsSalvarAjustadas()">✓ Salvar com datas ajustadas</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
@@ -3060,26 +3073,40 @@ async function salvarConsulta(){
   if(!aid && recFreq>0 && recQtd>1){
     const DIAS_EX=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
     const recPayloads=[];
-    const datasFinaisSemana=[];
+    const idxFds=[]; // índices dos payloads que caem em fim de semana
     for(let i=1;i<recQtd;i++){
       const dt=new Date(data+'T12:00:00');
       if(recFreq===30) dt.setMonth(dt.getMonth()+i);
       else dt.setDate(dt.getDate()+recFreq*i);
       const dtStr=dt.toISOString().split('T')[0];
       const diaSem=dt.getDay();
-      if(diaSem===0||diaSem===6){
-        const[y,m,d2]=dtStr.split('-');
-        datasFinaisSemana.push(`${DIAS_EX[diaSem]}, ${d2}/${m}/${y}`);
-      }
+      if(diaSem===0||diaSem===6) idxFds.push({idx:recPayloads.length,dtStr,diaSem});
       recPayloads.push({...payload,data:dtStr});
     }
-    // Aviso de fim de semana
-    if(datasFinaisSemana.length>0){
-      const aviso=`⚠️ As seguintes datas recorrentes caem em fim de semana:\n\n${datasFinaisSemana.join('\n')}\n\nDeseja agendar mesmo assim?`;
-      if(!confirm(aviso)){
-        btn.disabled=false;btn.innerHTML='✓ Salvar';
-        return;
-      }
+    // Se há datas em fim de semana, mostrar modal de ajuste
+    if(idxFds.length>0){
+      // Guardar estado para as funções do modal usarem
+      window._fdsPayloads=recPayloads;
+      window._fdsPayloadPrincipal={...payload};
+      window._fdsQtd=recQtd;
+      window._fdsNome=nome;window._fdsHora=hora;window._fdsProcedimento=payload.procedimento;window._fdsPacId=payload.paciente_id;
+      // Montar lista de inputs no modal
+      const lista=document.getElementById('fds-lista');
+      lista.innerHTML=idxFds.map(({idx,dtStr,diaSem})=>{
+        const[y,m,d2]=dtStr.split('-');
+        return`<div style="display:flex;align-items:center;gap:10px;background:var(--amarelo-c);border-radius:8px;padding:10px 12px">
+          <span style="font-size:18px">${diaSem===0?'☀️':'🌅'}</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:#7a5800">${DIAS_EX[diaSem]}, ${d2}/${m}/${y}</div>
+            <div style="font-size:11px;color:var(--ct)">Ajuste a data se necessário</div>
+          </div>
+          <input type="date" data-idx="${idx}" value="${dtStr}" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--borda);background:white"/>
+        </div>`;
+      }).join('');
+      // Reabilitar botão e abrir modal
+      btn.disabled=false;btn.innerHTML='✓ Salvar';
+      document.getElementById('m-fds').classList.add('open');
+      return; // aguarda ação do usuário no modal
     }
     await db.from('agenda').insert(recPayloads);
     toast(`Consulta salva! ✓ (+ ${recQtd-1} repetição${recQtd-1>1?'ões':''} criadas)`,'verde');
@@ -3088,6 +3115,29 @@ async function salvarConsulta(){
   }
   agDia=data;fchAg();carregarAgenda();
   await logAuditoria(aid?'Consulta editada':'Consulta criada', `${nome} · ${data} ${hora}${payload.procedimento?' · '+payload.procedimento:''}${recFreq>0&&!aid?' · recorrente x'+recQtd:''}`, payload.paciente_id||null);
+}
+
+// ── Funções do modal de ajuste de fim de semana ──
+async function fdsSalvarAjustadas(){
+  // Ler datas ajustadas dos inputs
+  document.querySelectorAll('#fds-lista input[type="date"]').forEach(inp=>{
+    const idx=parseInt(inp.dataset.idx);
+    if(window._fdsPayloads[idx]) window._fdsPayloads[idx].data=inp.value;
+  });
+  await _fdsGravarEFechar();
+}
+async function fdsManterTodas(){
+  await _fdsGravarEFechar();
+}
+async function _fdsGravarEFechar(){
+  document.getElementById('m-fds').classList.remove('open');
+  const qtd=window._fdsQtd||2;
+  await db.from('agenda').insert(window._fdsPayloads);
+  toast(`Consulta salva! ✓ (+ ${qtd-1} repetição${qtd-1>1?'ões':''} criadas)`,'verde');
+  const data=window._fdsPayloadPrincipal?.data||agDia;
+  agDia=data;fchAg();carregarAgenda();
+  await logAuditoria('Consulta criada (recorrente)',`${window._fdsNome||''} · ${data} ${window._fdsHora||''} · x${qtd}`,window._fdsPacId||null);
+  window._fdsPayloads=null;
 }
 function mostrarVinculado(p){
   agPacId=p.id;
