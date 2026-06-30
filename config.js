@@ -1,72 +1,114 @@
-// ═══════════════════════════════════════════════════════════════
-// CONFIGURAÇÃO DA CLÍNICA — edite APENAS este arquivo para cada cliente
-// ═══════════════════════════════════════════════════════════════
-// Para criar uma nova clínica: copie este arquivo e preencha os dados abaixo.
-// Os arquivos HTML ficam IDÊNTICOS entre clientes.
+// config.js — DEV (clinica-dev)
+// Usar var para permitir que outras páginas referenciem sem conflito de redeclaração
+var SB_URL = 'https://rsdgztfvqnkrhzrkihol.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzZGd6dGZ2cW5rcmh6cmtpaG9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzkwMjgsImV4cCI6MjA5Njg1NTAyOH0.eLgjYAsrpExhWCf-1ZpSxe_5qL6Vp1gbtSb4ELer4Go';
 
-const CLINICA_CONFIG = {
-
-  // ── Banco de dados Supabase ──────────────────────────────────
-  sb_url: 'https://rsdgztfvqnkrhzrkihol.supabase.co',
-  sb_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzZGd6dGZ2cW5rcmh6cmtpaG9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzkwMjgsImV4cCI6MjA5Njg1NTAyOH0.eLgjYAsrpExhWCf-1ZpSxe_5qL6Vp1gbtSb4ELer4Go',
-
-  // ── Informações da clínica ───────────────────────────────────
-  nome:          'Dra. Anna Carolina Dias',
+var CLINICA_CONFIG = {
+  nome: 'Dra. Anna Carolina Dias',
   especialidade: 'Harmonização Orofacial',
-  cro:           'CRO 82281',
-  telefone:      '(17) 98211-3940',
-  whatsapp:      '5517982113993',
-  endereco:      'Rua Capitão Daniel da Cunha Morais, 632',
-  cidade:        'Tanabi/SP',
-  cep:           'CEP 15170-027',
-  logo:          'logo.jpg',           // caminho relativo ou URL completa
-
-  // ── Sistema ──────────────────────────────────────────────────
-  base_url:      'https://claudiogallegoadv.github.io/clinica-dev/',
-
-  // ── Segurança ────────────────────────────────────────────────
-  senha:         '1234',   // PIN de acesso — troque por algo seguro!
-  sessao_horas:  8,        // horas antes de pedir PIN novamente
-
+  logo: 'logo.jpg',
+  cor: '#1D9E75',
+  pinLength: 4,
+  loginEmail: 'clinica@annacarolina.com'
 };
 
-// ── Atalhos compatíveis com o código existente ───────────────
-// Todos os HTMLs continuam funcionando sem alteração pois
-// as variáveis SB_URL e SB_KEY continuam existindo globalmente.
-const SB_URL = CLINICA_CONFIG.sb_url;
-const SB_KEY  = CLINICA_CONFIG.sb_key;
-
-// ── Funções de autenticação ──────────────────────────────────
-function authCheck(redirectTo){
-  // Verifica se há sessão válida; se não, redireciona para login
-  try{
-    const auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
-    if(auth.ok && auth.expires > Date.now()) return true; // sessão válida
-  }catch(e){}
-  // Sem sessão — redireciona para login
-  const dest = redirectTo || window.location.href;
-  window.location.href = 'login.html?r='+encodeURIComponent(dest);
-  return false;
+// ── Renovação automática do token ──
+async function renovarTokenSeNecessario() {
+  try {
+    const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+    if (!auth.ok || !auth.refresh_token) return false;
+    const faltam = auth.expires - Date.now();
+    if (faltam < 2 * 60 * 60 * 1000) { // Renova se faltam menos de 2 horas
+      const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
+        body: JSON.stringify({ refresh_token: auth.refresh_token })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        localStorage.removeItem('clinica_auth');
+        sessionStorage.removeItem('clinica_auth');
+        window.location.href = 'login.html';
+        return false;
+      }
+      const novaAuth = {
+        ok: true,
+        expires: Date.now() + 24 * 60 * 60 * 1000,
+        access_token: data.access_token,
+        refresh_token: data.refresh_token || auth.refresh_token
+      };
+      localStorage.setItem('clinica_auth', JSON.stringify(novaAuth));
+      sessionStorage.setItem('clinica_auth', '1');
+      return true;
+    }
+    return true;
+  } catch(e) { return false; }
 }
 
-function authLogin(pin){
-  if(pin !== CLINICA_CONFIG.senha) return false;
-  localStorage.setItem('clinica_auth', JSON.stringify({
-    ok: true,
-    expires: Date.now() + (CLINICA_CONFIG.sessao_horas * 3600 * 1000)
-  }));
-  return true;
+// Renova ao carregar e a cada 20 minutos
+(async () => {
+  const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+  if (auth.ok) await renovarTokenSeNecessario();
+  setInterval(renovarTokenSeNecessario, 20 * 60 * 1000);
+})();
+
+// ── Carrega config da clínica do Supabase ──
+async function carregarConfigClinica() {
+  try {
+    const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+    const token = auth.access_token || SB_KEY;
+    const res = await fetch(`${SB_URL}/rest/v1/config_clinica?select=*&limit=1`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const c = data[0];
+      CLINICA_CONFIG.nome          = c.nome          || CLINICA_CONFIG.nome;
+      CLINICA_CONFIG.especialidade = c.especialidade || CLINICA_CONFIG.especialidade;
+      CLINICA_CONFIG.logo          = c.logo_url      || CLINICA_CONFIG.logo;
+      CLINICA_CONFIG.cor           = c.cor_principal || CLINICA_CONFIG.cor;
+      CLINICA_CONFIG.telefone      = c.telefone      || '';
+      CLINICA_CONFIG.whatsapp      = c.whatsapp      || '';
+      CLINICA_CONFIG.endereco      = c.endereco      || '';
+      CLINICA_CONFIG.email         = c.email         || '';
+      CLINICA_CONFIG.instagram     = c.instagram     || '';
+      CLINICA_CONFIG._id           = c.id;
+      document.documentElement.style.setProperty('--verde', c.cor_principal || '#1D9E75');
+    }
+  } catch(e) { /* usa fallback */ }
 }
 
-function authLogout(){
-  localStorage.removeItem('clinica_auth');
-  window.location.href = 'login.html';
+// ── Função auxiliar para criar cliente Supabase autenticado ──
+function sbClient() {
+  const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+  const token = auth.access_token || SB_KEY;
+  const { createClient } = supabase;
+  return createClient(SB_URL, SB_KEY, {
+    global: { headers: { 'Authorization': `Bearer ${token}`, 'apikey': SB_KEY } }
+  });
 }
 
-// ── Preencher metadados da clínica na página ─────────────────
-document.addEventListener('DOMContentLoaded', function(){
-  // Atualizar title
-  if(document.title && !document.title.includes(CLINICA_CONFIG.nome)){
-    document.title = document.title + ' — ' + CLINICA_CONFIG.nome;
+// ── Login via Supabase Auth (PIN como senha) ──
+async function authLogin(pin) {
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
+      body: JSON.stringify({ email: CLINICA_CONFIG.loginEmail, password: pin })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      return { ok: false, error: data.error_description || 'PIN incorreto' };
+    }
+    const expires = Date.now() + 8 * 60 * 60 * 1000;
+    localStorage.setItem('clinica_auth', JSON.stringify({
+      ok: true, expires,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token
+    }));
+    sessionStorage.setItem('clinica_auth', '1');
+    return { ok: true };
+  } catch(e) {
+    return { ok: false, error: 'Erro de conexão.' };
   }
-});
+}
